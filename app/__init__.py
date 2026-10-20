@@ -2,8 +2,8 @@
 import os
 import re
 from pathlib import Path
-from uuid import uuid4
 from urllib.parse import quote_plus
+from uuid import uuid4
 
 from dotenv import load_dotenv
 from flask import (
@@ -80,7 +80,6 @@ def create_app(test_config=None):
         except (TypeError, ValueError):
             return None
 
-    # Create database tables during normal local runs, not tests.
     if not app.config.get("TESTING"):
         with app.app_context():
             db.create_all()
@@ -115,12 +114,10 @@ def create_app(test_config=None):
         }
         errors = {}
 
-        # Validate required fields.
         for field, value in data.items():
             if not value:
                 errors[field] = "This field is required."
 
-        # Validate student and parent names.
         name_pattern = r"[A-Za-z]+(?:[ '-][A-Za-z]+)*"
 
         for field in ("full_name", "parent_name"):
@@ -132,7 +129,6 @@ def create_app(test_config=None):
                     "or hyphens between names."
                 )
 
-        # Accept Gmail addresses only.
         if "email" not in errors:
             if not re.fullmatch(
                 r"[A-Za-z0-9._%+-]+@gmail\.com",
@@ -143,7 +139,6 @@ def create_app(test_config=None):
                     "Enter a valid Gmail address ending in @gmail.com."
                 )
 
-        # Validate password strength.
         if "password" not in errors:
             password = data["password"]
             if (
@@ -158,14 +153,12 @@ def create_app(test_config=None):
                     "lowercase, a number, and a special character."
                 )
 
-        # Validate contact numbers.
         for field in ("contact_number", "parent_contact_number"):
             if field not in errors and not re.fullmatch(
                 r"[0-9]{10}", data[field]
             ):
                 errors[field] = "Enter exactly 10 digits."
 
-        # Validate SRN.
         if "srn" not in errors and not re.fullmatch(
             r"[A-Za-z0-9]+", data["srn"]
         ):
@@ -173,7 +166,6 @@ def create_app(test_config=None):
                 "SRN must contain letters and numbers only."
             )
 
-        # Validate room number.
         if "room_number" not in errors and not re.fullmatch(
             r"[A-Za-z0-9-]+", data["room_number"]
         ):
@@ -181,7 +173,6 @@ def create_app(test_config=None):
                 "Use letters, numbers, and hyphens only."
             )
 
-        # Validate uploaded ID proof.
         id_proof = request.files.get("id_proof")
         original_name = ""
 
@@ -310,7 +301,9 @@ def create_app(test_config=None):
 
         if (
             student is None
-            or not check_password_hash(student.password_hash, password)
+            or not check_password_hash(
+                student.password_hash, password
+            )
         ):
             return render_template(
                 "login.html",
