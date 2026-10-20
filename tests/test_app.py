@@ -1,17 +1,14 @@
-
 from app import create_app
 
 
-def test_home_endpoint(monkeypatch):
-    monkeypatch.setenv("SECRET_KEY", "test-secret-key")
-    monkeypatch.setenv("DB_HOST", "localhost")
-    monkeypatch.setenv("DB_PORT", "3306")
-    monkeypatch.setenv("DB_NAME", "hostel_management")
-    monkeypatch.setenv("DB_USER", "root")
-    monkeypatch.setenv("DB_PASSWORD", "")
-
-    app = create_app()
-    app.config["TESTING"] = True
+def test_home_endpoint():
+    app = create_app(
+        {
+            "TESTING": True,
+            "SECRET_KEY": "test-secret-key",
+            "SQLALCHEMY_DATABASE_URI": "sqlite://",
+        }
+    )
 
     client = app.test_client()
     response = client.get("/")
