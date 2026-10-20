@@ -1,8 +1,8 @@
-
 import os
 import re
 from pathlib import Path
 from uuid import uuid4
+from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 from flask import Flask, render_template, request
@@ -19,10 +19,12 @@ ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
 
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-only-change-me")
+    app.config["SECRET_KEY"] = os.getenv(
+        "SECRET_KEY", "dev-only-change-me"
+    )
 
     db_user = os.getenv("DB_USER", "root")
     db_password = os.getenv("DB_PASSWORD", "")
@@ -30,14 +32,15 @@ def create_app():
     db_port = os.getenv("DB_PORT", "3306")
     db_name = os.getenv("DB_NAME", "hostel_management")
 
-    from urllib.parse import quote_plus
-
     app.config["SQLALCHEMY_DATABASE_URI"] = (
-        f"mysql+pymysql://{quote_plus(db_user)}:{quote_plus(db_password)}"
-        f"@{db_host}:{db_port}/{db_name}"
+        f"mysql+pymysql://{quote_plus(db_user)}:"
+        f"{quote_plus(db_password)}@{db_host}:{db_port}/{db_name}"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["MAX_CONTENT_LENGTH"] = MAX_FILE_SIZE
+
+    if test_config:
+        app.config.update(test_config)
 
     upload_folder = Path(app.root_path) / "static" / "uploads"
     upload_folder.mkdir(parents=True, exist_ok=True)
@@ -47,10 +50,10 @@ def create_app():
 
     from app.models import Student
 
-    # Create the students table if it does not exist.
-    # MySQL must be running and the database must already exist.
-    with app.app_context():
-        db.create_all()
+    # Skip automatic table creation during tests.
+    if not app.config.get("TESTING"):
+        with app.app_context():
+            db.create_all()
 
     @app.route("/")
     def home():
@@ -82,12 +85,12 @@ def create_app():
         }
         errors = {}
 
-        # Every text field is mandatory.
+        # Validate required fields.
         for field, value in data.items():
             if not value:
                 errors[field] = "This field is required."
 
-        # Full name and parent name.
+        # Validate student and parent names.
         name_pattern = r"[A-Za-z]+(?:[ '-][A-Za-z]+)*"
 
         for field in ("full_name", "parent_name"):
@@ -99,7 +102,7 @@ def create_app():
                     "or hyphens between names."
                 )
 
-        # Gmail address only.
+        # Accept Gmail addresses only.
         if "email" not in errors:
             if not re.fullmatch(
                 r"[A-Za-z0-9._%+-]+@gmail\.com",
@@ -110,8 +113,7 @@ def create_app():
                     "Enter a valid Gmail address ending in @gmail.com."
                 )
 
-        # Password: minimum 8 characters, uppercase, lowercase,
-        # number, and special character.
+        # Validate password strength.
         if "password" not in errors:
             password = data["password"]
             if (
@@ -126,14 +128,14 @@ def create_app():
                     "lowercase, a number, and a special character."
                 )
 
-        # Both contact numbers must be exactly 10 digits.
+        # Validate contact numbers.
         for field in ("contact_number", "parent_contact_number"):
             if field not in errors and not re.fullmatch(
                 r"[0-9]{10}", data[field]
             ):
                 errors[field] = "Enter exactly 10 digits."
 
-        # SRN may contain letters and numbers only.
+        # Validate SRN.
         if "srn" not in errors and not re.fullmatch(
             r"[A-Za-z0-9]+", data["srn"]
         ):
@@ -141,7 +143,7 @@ def create_app():
                 "SRN must contain letters and numbers only."
             )
 
-        # Room number may contain letters, digits, and hyphens.
+        # Validate room number.
         if "room_number" not in errors and not re.fullmatch(
             r"[A-Za-z0-9-]+", data["room_number"]
         ):
@@ -196,7 +198,8 @@ def create_app():
                 form_data=data,
             ), 409
 
-        saved_name = f"{uuid4().hex}.{original_name.rsplit('.', 1)[-1].lower()}"
+        extension = original_name.rsplit(".", 1)[-1].lower()
+        saved_name = f"{uuid4().hex}.{extension}"
         saved_path = Path(app.config["UPLOAD_FOLDER"]) / saved_name
 
         try:
@@ -240,9 +243,7 @@ def create_app():
             return render_template(
                 "register.html",
                 errors={
-                    "general": (
-                        "Registration failed. Please try again."
-                    )
+                    "general": "Registration failed. Please try again."
                 },
                 form_data=data,
             ), 500
