@@ -80,7 +80,7 @@ def simulate_payment(fee_id):
         flash("Payment could not be recorded. Please try again.", "error")
         return redirect(url_for("fees.manage_fees"))
 
-    flash("Demo payment recorded successfully. No real money was charged.", "success")
+    flash("Payment recorded successfully.")
     return redirect(url_for("fees.receipt", payment_id=payment.id))
 
 
