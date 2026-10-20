@@ -1,0 +1,464 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration | Hostel Management System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f4fa;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #111827;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1010px;
+            padding: 38px;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 12px 35px rgba(25, 50, 90, 0.08);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            color: #173f91;
+            font-size: 38px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            margin: 0 0 30px;
+            color: #52617a;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px 24px;
+        }
+
+        .form-group {
+            min-width: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .required {
+            color: #dc2626;
+            margin-left: 3px;
+        }
+
+        input {
+            width: 100%;
+            min-width: 0;
+            height: 48px;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: #111827;
+            font: inherit;
+            font-size: 15px;
+        }
+
+        input::placeholder {
+            color: #91a0b8;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3158b0;
+            box-shadow: 0 0 0 3px rgba(49, 88, 176, 0.12);
+        }
+
+        input[aria-invalid="true"] {
+            border-color: #dc2626;
+        }
+
+        input[type="file"] {
+            height: 48px;
+            padding: 7px;
+            font-size: 14px;
+        }
+
+        input[type="file"]::file-selector-button {
+            padding: 6px 10px;
+            margin-right: 8px;
+            border: 1px solid #aab6c8;
+            border-radius: 5px;
+            background: #f4f6fa;
+            cursor: pointer;
+        }
+
+        .field-error {
+            display: block;
+            margin-top: 6px;
+            color: #dc2626;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .field-error:empty {
+            display: none;
+        }
+
+        .form-message {
+            display: none;
+            margin-top: 20px;
+            padding: 12px 14px;
+            border: 1px solid #fecaca;
+            border-radius: 7px;
+            background: #fef2f2;
+            color: #b91c1c;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .form-message.visible {
+            display: block;
+        }
+
+        .form-message.success {
+            display: block;
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .register-button {
+            width: 100%;
+            min-height: 52px;
+            margin-top: 24px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #2d50a0;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .register-button:hover {
+            background: #203f87;
+        }
+
+        @media (max-width: 650px) {
+            body {
+                padding: 20px 12px;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 24px 18px;
+                border-radius: 12px;
+            }
+
+            h1 {
+                font-size: 29px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <h1>Student Registration</h1>
+        <p class="subtitle">
+            Enter your details to create a hostel account.
+        </p>
+
+        {% if success %}
+        <div class="form-message success" role="status">
+            {{ success }}
+        </div>
+        {% endif %}
+
+        {% if errors and errors.get("general") %}
+        <div class="form-message visible" role="alert">
+            {{ errors.get("general") }}
+        </div>
+        {% endif %}
+
+        <form id="registrationForm" action="/register" method="POST"
+              enctype="multipart/form-data" novalidate>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="full_name">
+                        Full Name<span class="required">*</span>
+                    </label>
+                    <input type="text" id="full_name" name="full_name"
+                           placeholder="Enter your full name"
+                           autocomplete="name" required
+                           pattern="[A-Za-z]+(?:[ '-][A-Za-z]+)*"
+                           value="{{ form_data.get('full_name', '') if form_data else '' }}">
+                    <small class="field-error" id="full_name_error">{{ errors.get('full_name', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">
+                        Email<span class="required">*</span>
+                    </label>
+                    <input type="email" id="email" name="email"
+                           placeholder="Enter your email"
+                           autocomplete="email" required
+                           pattern="[A-Za-z0-9._%+-]+@gmail\.com"
+                           value="{{ form_data.get('email', '') if form_data else '' }}">
+                    <small class="field-error" id="email_error">{{ errors.get('email', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        Password<span class="required">*</span>
+                    </label>
+                    <input type="password" id="password" name="password"
+                           placeholder="At least 8 characters"
+                           autocomplete="new-password" required minlength="8"
+                           title="Include uppercase, lowercase, a number, and a special character.">
+                    <small class="field-error" id="password_error">{{ errors.get('password', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="contact_number">
+                        Contact Number<span class="required">*</span>
+                    </label>
+                    <input type="tel" id="contact_number" name="contact_number"
+                           placeholder="Enter your 10-digit contact number"
+                           inputmode="numeric" autocomplete="tel"
+                           maxlength="10" required pattern="[0-9]{10}"
+                           value="{{ form_data.get('contact_number', '') if form_data else '' }}">
+                    <small class="field-error" id="contact_number_error">{{ errors.get('contact_number', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="srn">
+                        SRN<span class="required">*</span>
+                    </label>
+                    <input type="text" id="srn" name="srn"
+                           placeholder="Enter your SRN"
+                           autocomplete="off" required maxlength="30"
+                           pattern="[A-Za-z0-9]+"
+                           value="{{ form_data.get('srn', '') if form_data else '' }}">
+                    <small class="field-error" id="srn_error">{{ errors.get('srn', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="parent_name">
+                        Parent Name<span class="required">*</span>
+                    </label>
+                    <input type="text" id="parent_name" name="parent_name"
+                           placeholder="Enter parent's name" required
+                           pattern="[A-Za-z]+(?:[ '-][A-Za-z]+)*"
+                           value="{{ form_data.get('parent_name', '') if form_data else '' }}">
+                    <small class="field-error" id="parent_name_error">{{ errors.get('parent_name', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="parent_contact_number">
+                        Parent Contact Number<span class="required">*</span>
+                    </label>
+                    <input type="tel" id="parent_contact_number"
+                           name="parent_contact_number"
+                           placeholder="Enter parent's 10-digit contact number"
+                           inputmode="numeric" maxlength="10" required
+                           pattern="[0-9]{10}"
+                           value="{{ form_data.get('parent_contact_number', '') if form_data else '' }}">
+                    <small class="field-error" id="parent_contact_number_error">{{ errors.get('parent_contact_number', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="hostel_name">
+                        Hostel Name<span class="required">*</span>
+                    </label>
+                    <input type="text" id="hostel_name" name="hostel_name"
+                           placeholder="Enter hostel name" required maxlength="100"
+                           value="{{ form_data.get('hostel_name', '') if form_data else '' }}">
+                    <small class="field-error" id="hostel_name_error">{{ errors.get('hostel_name', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="room_number">
+                        Room Number<span class="required">*</span>
+                    </label>
+                    <input type="text" id="room_number" name="room_number"
+                           placeholder="Enter room number" required maxlength="20"
+                           pattern="[A-Za-z0-9-]+"
+                           value="{{ form_data.get('room_number', '') if form_data else '' }}">
+                    <small class="field-error" id="room_number_error">{{ errors.get('room_number', '') if errors else '' }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_proof">
+                        ID Proof<span class="required">*</span>
+                    </label>
+                    <input type="file" id="id_proof" name="id_proof"
+                           accept=".pdf,.jpg,.jpeg,.png" required>
+                    <small class="field-error" id="id_proof_error">{{ errors.get('id_proof', '') if errors else '' }}</small>
+                </div>
+            </div>
+
+            <div id="formError" class="form-message" role="alert"
+                 aria-live="polite"></div>
+
+            <button class="register-button" type="submit">
+                Register
+            </button>
+        </form>
+    </main>
+
+    <script>
+        const form = document.getElementById("registrationForm");
+        const formError = document.getElementById("formError");
+
+        const fieldIds = [
+            "full_name",
+            "email",
+            "password",
+            "contact_number",
+            "srn",
+            "parent_name",
+            "parent_contact_number",
+            "hostel_name",
+            "room_number",
+            "id_proof"
+        ];
+
+        function validateField(field) {
+            const error = document.getElementById(field.id + "_error");
+            let message = "";
+            const value = field.value.trim();
+
+            if (field.type === "file") {
+                if (!field.files || field.files.length === 0) {
+                    message = "Please upload your ID proof.";
+                } else {
+                    const file = field.files[0];
+
+                    if (!/\.(pdf|jpe?g|png)$/i.test(file.name)) {
+                        message = "Upload a PDF, JPG, JPEG, or PNG file.";
+                    } else if (file.size > 5 * 1024 * 1024) {
+                        message = "ID proof must be 5 MB or smaller.";
+                    }
+                }
+            } else if (!value) {
+                message = "Please fill out this field.";
+            } else if (field.id === "full_name" ||
+                       field.id === "parent_name") {
+                if (!/^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/.test(value)) {
+                    message = "Use letters only, with spaces, apostrophes, or hyphens between names.";
+                }
+            } else if (field.id === "email") {
+                if (!/^[A-Za-z0-9._%+-]+@gmail\.com$/i.test(value)) {
+                    message = "Enter a valid Gmail address ending in @gmail.com.";
+                }
+            } else if (field.id === "password") {
+                if (field.value.length < 8 ||
+                    !/[A-Z]/.test(field.value) ||
+                    !/[a-z]/.test(field.value) ||
+                    !/[0-9]/.test(field.value) ||
+                    !/[^A-Za-z0-9]/.test(field.value)) {
+                    message = "Use at least 8 characters, including uppercase, lowercase, a number, and a special character.";
+                }
+            } else if (field.id === "contact_number" ||
+                       field.id === "parent_contact_number") {
+                if (!/^[0-9]{10}$/.test(value)) {
+                    message = "Enter exactly 10 digits, using numbers only.";
+                }
+            } else if (field.id === "srn") {
+                if (!/^[A-Za-z0-9]+$/.test(value)) {
+                    message = "SRN can contain letters and numbers only.";
+                }
+            } else if (field.id === "room_number") {
+                if (!/^[A-Za-z0-9-]+$/.test(value)) {
+                    message = "Use letters, numbers, and hyphens only.";
+                }
+            }
+
+            error.textContent = message;
+            field.setAttribute("aria-invalid", message ? "true" : "false");
+            return message === "";
+        }
+
+        fieldIds.forEach(function (id) {
+            const field = document.getElementById(id);
+
+            field.addEventListener("blur", function () {
+                validateField(field);
+            });
+
+            field.addEventListener("input", function () {
+                if (field.getAttribute("aria-invalid") === "true") {
+                    validateField(field);
+                }
+                formError.classList.remove("visible");
+                formError.textContent = "";
+            });
+
+            field.addEventListener("change", function () {
+                if (field.type === "file") {
+                    validateField(field);
+                }
+            });
+        });
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            let allValid = true;
+            let firstInvalidField = null;
+
+            fieldIds.forEach(function (id) {
+                const field = document.getElementById(id);
+
+                if (!validateField(field)) {
+                    allValid = false;
+                    if (!firstInvalidField) {
+                        firstInvalidField = field;
+                    }
+                }
+            });
+
+            if (!allValid) {
+                formError.textContent =
+                    "Please fill in all required fields correctly before registering.";
+                formError.classList.add("visible");
+                firstInvalidField.focus();
+                return;
+            }
+
+            // Submit to Flask after client-side validation succeeds.
+            form.submit();
+        });
+    </script>
+</body>
+</html>
