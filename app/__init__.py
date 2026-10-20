@@ -1,19 +1,41 @@
+
 import os
 import re
 from pathlib import Path
-from uuid import uuid4
 from urllib.parse import quote_plus
+from uuid import uuid4
 
 from dotenv import load_dotenv
-from flask import Flask, render_template, request
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+)
+from flask_login import (
+    LoginManager,
+    login_user,
+    logout_user,
+    login_required,
+    current_user,
+)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-from werkzeug.security import generate_password_hash
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash,
+)
 from werkzeug.utils import secure_filename
 
 load_dotenv()
 
 db = SQLAlchemy()
+
+login_manager = LoginManager()
+login_manager.login_view = "login"
+login_manager.login_message = "Please log in to access this page."
 
 ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
 MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -47,10 +69,17 @@ def create_app(test_config=None):
     app.config["UPLOAD_FOLDER"] = str(upload_folder)
 
     db.init_app(app)
+    login_manager.init_app(app)
 
     from app.models import Student
 
-    # Skip automatic table creation during tests.
+    @login_manager.user_loader
+    def load_user(user_id):
+        try:
+            return db.session.get(Student, int(user_id))
+        except (TypeError, ValueError):
+            return None
+
     if not app.config.get("TESTING"):
         with app.app_context():
             db.create_all()
@@ -85,12 +114,10 @@ def create_app(test_config=None):
         }
         errors = {}
 
-        # Validate required fields.
         for field, value in data.items():
             if not value:
                 errors[field] = "This field is required."
 
-        # Validate student and parent names.
         name_pattern = r"[A-Za-z]+(?:[ '-][A-Za-z]+)*"
 
         for field in ("full_name", "parent_name"):
@@ -102,7 +129,6 @@ def create_app(test_config=None):
                     "or hyphens between names."
                 )
 
-        # Accept Gmail addresses only.
         if "email" not in errors:
             if not re.fullmatch(
                 r"[A-Za-z0-9._%+-]+@gmail\.com",
@@ -113,7 +139,6 @@ def create_app(test_config=None):
                     "Enter a valid Gmail address ending in @gmail.com."
                 )
 
-        # Validate password strength.
         if "password" not in errors:
             password = data["password"]
             if (
@@ -128,14 +153,12 @@ def create_app(test_config=None):
                     "lowercase, a number, and a special character."
                 )
 
-        # Validate contact numbers.
         for field in ("contact_number", "parent_contact_number"):
             if field not in errors and not re.fullmatch(
                 r"[0-9]{10}", data[field]
             ):
                 errors[field] = "Enter exactly 10 digits."
 
-        # Validate SRN.
         if "srn" not in errors and not re.fullmatch(
             r"[A-Za-z0-9]+", data["srn"]
         ):
@@ -143,7 +166,6 @@ def create_app(test_config=None):
                 "SRN must contain letters and numbers only."
             )
 
-        # Validate room number.
         if "room_number" not in errors and not re.fullmatch(
             r"[A-Za-z0-9-]+", data["room_number"]
         ):
@@ -151,7 +173,6 @@ def create_app(test_config=None):
                 "Use letters, numbers, and hyphens only."
             )
 
-        # Validate uploaded ID proof.
         id_proof = request.files.get("id_proof")
         original_name = ""
 
@@ -170,7 +191,9 @@ def create_app(test_config=None):
                     "Upload a PDF, JPG, JPEG, or PNG file."
                 )
             elif len(id_proof.read()) > MAX_FILE_SIZE:
-                errors["id_proof"] = "The file must be 5 MB or smaller."
+                errors["id_proof"] = (
+                    "The file must be 5 MB or smaller."
+                )
 
             id_proof.seek(0)
 
@@ -243,7 +266,9 @@ def create_app(test_config=None):
             return render_template(
                 "register.html",
                 errors={
-                    "general": "Registration failed. Please try again."
+                    "general": (
+                        "Registration failed. Please try again."
+                    )
                 },
                 form_data=data,
             ), 500
@@ -253,5 +278,49 @@ def create_app(test_config=None):
             success="Registration completed successfully!",
             form_data={},
         ), 201
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if current_user.is_authenticated:
+            return redirect(url_for("home"))
+
+        if request.method == "GET":
+            return render_template("login.html")
+
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        if not email or not password:
+            return render_template(
+                "login.html",
+                error="Please enter your email and password.",
+                email=email,
+            ), 400
+
+        student = Student.query.filter_by(email=email).first()
+
+        if (
+            student is None
+            or not check_password_hash(
+                student.password_hash, password
+            )
+        ):
+            return render_template(
+                "login.html",
+                error="Invalid email or password.",
+                email=email,
+            ), 401
+
+        login_user(student)
+        flash("Login successful!", "success")
+
+        return redirect(url_for("home"))
+
+    @app.route("/logout", methods=["POST"])
+    @login_required
+    def logout():
+        logout_user()
+        flash("You have been logged out.", "success")
+        return redirect(url_for("login"))
 
     return app
