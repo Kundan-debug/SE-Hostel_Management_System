@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Payment Receipt</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f3f5f9;
+               padding: 28px; color: #202938; }
+        main { max-width: 620px; margin: 25px auto; padding: 28px;
+               background: white; border-radius: 12px; }
+        .row { padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
+        .label { color: #687386; }
+        .demo { padding: 12px; background: #fff4d6; border-radius: 6px; }
+        button, a { display: inline-block; margin-top: 18px; padding: 10px 14px; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Payment Receipt</h1>
+    <p class="demo">DEMO RECEIPT — No real money was transferred.</p>
+
+    <div class="row"><span class="label">Receipt reference</span><br>
+        {{ payment.transaction_reference }}</div>
+    <div class="row"><span class="label">Student</span><br>
+        {{ payment.student.full_name }}</div>
+    <div class="row"><span class="label">Fee</span><br>
+        {{ payment.fee.description }}</div>
+    <div class="row"><span class="label">Amount</span><br>
+        ₹{{ "%.2f"|format(payment.amount) }}</div>
+    <div class="row"><span class="label">Payment date</span><br>
+        {{ payment.payment_date.strftime("%d %b %Y, %H:%M") }}</div>
+    <div class="row"><span class="label">Payment method</span><br>
+        {{ payment.payment_method }}</div>
+    <div class="row"><span class="label">Status</span><br>
+        {{ payment.status }}</div>
+
+    <div class="no-print">
+        <button onclick="window.print()">Print / Save as PDF</button>
+        <a href="{{ url_for('fees.manage_fees') }}">Back to fees</a>
+    </div>
+</main>
+</body>
+</html>

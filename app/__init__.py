@@ -1,4 +1,3 @@
-
 import os
 import re
 from pathlib import Path
@@ -71,7 +70,7 @@ def create_app(test_config=None):
     db.init_app(app)
     login_manager.init_app(app)
 
-    from app.models import Student
+    from app.models import Student, Fee, Payment
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -323,4 +322,7 @@ def create_app(test_config=None):
         flash("You have been logged out.", "success")
         return redirect(url_for("login"))
 
+    from app.fees import fees_bp
+    app.register_blueprint(fees_bp)
+    
     return app
