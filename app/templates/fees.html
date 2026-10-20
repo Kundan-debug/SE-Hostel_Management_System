@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Fees and Payments</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f3f5f9;
+               color: #202938; margin: 0; padding: 28px; }
+        main { max-width: 1050px; margin: auto; }
+        .card { background: white; border-radius: 12px; padding: 22px;
+                margin-bottom: 20px; box-shadow: 0 2px 10px #0000000d; }
+        .summary { background: #e8efff; padding: 18px; border-radius: 8px; }
+        .amount { font-size: 26px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 9px; border-bottom: 1px solid #e5e7eb;
+                 text-align: left; }
+        th { background: #f8fafc; }
+        button, .button { background: #2457d6; color: white; padding: 9px 13px;
+                          border: 0; border-radius: 6px; cursor: pointer;
+                          text-decoration: none; display: inline-block; }
+        .status { font-weight: bold; }
+        .message { padding: 12px; background: #e8f7ed; border-radius: 6px; }
+        .error { background: #fdeaea; }
+        .muted { color: #687386; }
+        .table-wrap { overflow-x: auto; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Manage Fees and Payments</h1>
+    <p class="muted">View your hostel charges, dues, fines and payment history.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <p class="message {{ 'error' if category == 'error' else '' }}"
+           role="status">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    <section class="card summary">
+        <div>Outstanding balance</div>
+        <div class="amount">₹{{ "%.2f"|format(total_due) }}</div>
+    </section>
+
+    <section class="card">
+        <h2>Fees, dues and fines</h2>
+        {% if fees %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Description</th><th>Type</th><th>Amount</th>
+                    <th>Due date</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+            {% for fee in fees %}
+                <tr>
+                    <td>{{ fee.description }}</td>
+                    <td>{{ fee.fee_type }}</td>
+                    <td>₹{{ "%.2f"|format(fee.amount) }}</td>
+                    <td>{{ fee.due_date.strftime("%d %b %Y") }}</td>
+                    <td class="status">{{ fee.status }}</td>
+                    <td>
+                    {% if fee.status == "Due" %}
+                        <form method="post"
+                              action="{{ url_for('fees.simulate_payment', fee_id=fee.id) }}">
+                            <button type="submit">Pay (Demo)</button>
+                        </form>
+                    {% else %}
+                        Paid
+                    {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p>No fee records are assigned to your account yet.</p>
+        {% endif %}
+        <p class="muted">Demo payments do not transfer real money.</p>
+    </section>
+
+    <section class="card">
+        <h2>Payment history</h2>
+        {% if payments %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Reference</th><th>Method</th>
+                    <th>Amount</th><th>Status</th><th>Receipt</th></tr>
+            </thead>
+            <tbody>
+            {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date.strftime("%d %b %Y %H:%M") }}</td>
+                    <td>{{ payment.transaction_reference }}</td>
+                    <td>{{ payment.payment_method }}</td>
+                    <td>₹{{ "%.2f"|format(payment.amount) }}</td>
+                    <td>{{ payment.status }}</td>
+                    <td>
+                    {% if payment.status == "Success" %}
+                        <a class="button"
+                           href="{{ url_for('fees.receipt', payment_id=payment.id) }}">
+                           View receipt
+                        </a>
+                    {% else %}—
+                    {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p>No payments have been recorded yet.</p>
+        {% endif %}
+    </section>
+</main>
+</body>
+</html>
