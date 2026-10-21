@@ -1,0 +1,457 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Laundry Management | Hostel Management System</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 28px 18px;
+            background: #f3f5f9;
+            color: #202938;
+            font-family: Arial, sans-serif;
+        }
+
+        main { max-width: 1050px; margin: auto; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        h1 { margin-bottom: 8px; }
+        h2 { margin-top: 0; }
+        .muted { color: #687386; }
+
+        .card {
+            background: white;
+            padding: 24px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px #0000000d;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: #eef3ff;
+            border-radius: 9px;
+            padding: 18px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 25px;
+            margin-top: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .field.full { grid-column: 1 / -1; }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 7px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            font: inherit;
+            background: white;
+        }
+
+        textarea { min-height: 100px; resize: vertical; }
+
+        input:focus, textarea:focus {
+            outline: 2px solid #bfdbfe;
+            border-color: #2563eb;
+        }
+
+        button, .link-button {
+            display: inline-block;
+            padding: 11px 15px;
+            border: 0;
+            border-radius: 7px;
+            background: #2457d6;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        button:disabled { opacity: .6; cursor: wait; }
+        button.secondary { background: #e5e7eb; color: #202938; }
+        button.danger { background: #b91c1c; }
+
+        .actions { margin-top: 18px; display: flex; gap: 10px; }
+
+        .message {
+            display: none;
+            padding: 13px;
+            margin-bottom: 18px;
+            border-radius: 7px;
+        }
+
+        .message.success { display: block; background: #dcfce7; color: #166534; }
+        .message.error { display: block; background: #fee2e2; color: #991b1b; }
+
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            text-align: left;
+            padding: 13px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+
+        th { background: #f8fafc; font-size: 13px; }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            background: #e5e7eb;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+
+        .status.pending { background: #fef3c7; color: #92400e; }
+        .status.processing { background: #dbeafe; color: #1d4ed8; }
+        .status.ready { background: #ede9fe; color: #6d28d9; }
+        .status.delivered { background: #dcfce7; color: #166534; }
+        .status.cancelled { background: #fee2e2; color: #991b1b; }
+
+        .empty { padding: 24px 0; color: #687386; }
+        .small { font-size: 13px; }
+
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .field.full { grid-column: auto; }
+            .card { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <div>
+            <h1>Laundry Management</h1>
+            <p class="muted">Request a laundry pickup and track its progress.</p>
+        </div>
+        <a class="link-button" href="/">Back to Home</a>
+    </header>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <section class="summary">
+        <div class="stat">Total Requests<strong id="totalCount">0</strong></div>
+        <div class="stat">In Progress<strong id="activeCount">0</strong></div>
+        <div class="stat">Ready for Collection<strong id="readyCount">0</strong></div>
+        <div class="stat">Outstanding Charges<strong id="unpaidTotal">₹0.00</strong></div>
+    </section>
+
+    <section class="card">
+        <h2>New Laundry Request</h2>
+        <p class="muted">Enter the laundry items and your preferred pickup date.</p>
+
+        <form id="laundryForm">
+            <div class="form-grid">
+                <div class="field full">
+                    <label for="itemDetails">Items to wash</label>
+                    <textarea id="itemDetails" maxlength="500"
+                        placeholder="Example: 3 shirts, 2 trousers, 1 bedsheet"
+                        required></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="quantity">Total number of items</label>
+                    <input id="quantity" type="number" min="1" max="100"
+                        value="1" required>
+                </div>
+
+                <div class="field">
+                    <label for="pickupDate">Preferred pickup date</label>
+                    <input id="pickupDate" type="date" required>
+                </div>
+
+                <div class="field full">
+                    <label for="deliveryDate">Preferred delivery date (optional)</label>
+                    <input id="deliveryDate" type="date">
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="submitButton" type="submit">Submit Request</button>
+                <button class="secondary" type="reset">Clear Form</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>My Laundry Requests</h2>
+        <p class="muted">Track request status, pickup dates, charges and payment status.</p>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Request</th>
+                        <th>Items</th>
+                        <th>Pickup</th>
+                        <th>Delivery</th>
+                        <th>Status</th>
+                        <th>Charges</th>
+                        <th>Payment</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="requestRows">
+                    <tr><td colspan="8">Loading your requests...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="small muted">Charges are shown once they have been assigned by hostel staff.</p>
+    </section>
+</main>
+
+<script>
+    const API_URL = "/api/laundry";
+    const form = document.getElementById("laundryForm");
+    const message = document.getElementById("message");
+    const rows = document.getElementById("requestRows");
+    const submitButton = document.getElementById("submitButton");
+
+    const today = new Date();
+    const localToday = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0")
+    ].join("-");
+
+    const pickupInput = document.getElementById("pickupDate");
+    const deliveryInput = document.getElementById("deliveryDate");
+    pickupInput.min = localToday;
+    deliveryInput.min = localToday;
+
+    pickupInput.addEventListener("change", () => {
+        deliveryInput.min = pickupInput.value || localToday;
+        if (deliveryInput.value && deliveryInput.value < deliveryInput.min) {
+            deliveryInput.value = "";
+        }
+    });
+
+    function showMessage(text, type) {
+        message.textContent = text;
+        message.className = "message " + type;
+        message.style.display = "block";
+    }
+
+    function clearMessage() {
+        message.textContent = "";
+        message.className = "message";
+        message.style.display = "none";
+    }
+
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: "same-origin",
+            ...options,
+            headers: {
+                ...(options.body ? {"Content-Type": "application/json"} : {}),
+                ...(options.headers || {})
+            }
+        });
+
+        if (response.redirected && response.url.includes("/login")) {
+            window.location.href = response.url;
+            throw new Error("Please log in to continue.");
+        }
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.error || "Something went wrong. Please try again.");
+        }
+
+        return data;
+    }
+
+    function addCell(row, value) {
+        const cell = document.createElement("td");
+        cell.textContent = value == null || value === "" ? "—" : String(value);
+        row.appendChild(cell);
+        return cell;
+    }
+
+    function formatDate(value) {
+        if (!value) return "—";
+        const parts = value.split("-");
+        return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : value;
+    }
+
+    function formatMoney(value) {
+        const amount = Number(value || 0);
+        return "₹" + amount.toFixed(2);
+    }
+
+    function renderRequests(items) {
+        rows.replaceChildren();
+
+        document.getElementById("totalCount").textContent = items.length;
+        document.getElementById("activeCount").textContent =
+            items.filter(item => ["pending", "processing"].includes(item.status)).length;
+        document.getElementById("readyCount").textContent =
+            items.filter(item => item.status === "ready").length;
+
+        const unpaid = items
+            .filter(item => item.payment_status !== "paid")
+            .reduce((sum, item) => sum + Number(item.charges || 0), 0);
+
+        document.getElementById("unpaidTotal").textContent = formatMoney(unpaid);
+
+        if (!items.length) {
+            const row = document.createElement("tr");
+            const cell = addCell(row, "You haven't submitted any laundry requests yet.");
+            cell.colSpan = 8;
+            cell.className = "empty";
+            rows.appendChild(row);
+            return;
+        }
+
+        items.forEach(item => {
+            const row = document.createElement("tr");
+            addCell(row, "#" + item.id);
+            addCell(row, `${item.item_details} (Qty: ${item.quantity})`);
+            addCell(row, formatDate(item.pickup_date));
+            addCell(row, formatDate(item.delivery_date));
+
+            const statusCell = document.createElement("td");
+            const status = document.createElement("span");
+            status.className = "status " + item.status;
+            status.textContent = item.status;
+            statusCell.appendChild(status);
+            row.appendChild(statusCell);
+
+            addCell(row, formatMoney(item.charges));
+
+            const payment = String(item.payment_status || "unpaid");
+            addCell(row, payment.charAt(0).toUpperCase() + payment.slice(1));
+
+            const actionCell = document.createElement("td");
+            if (item.status === "pending") {
+                const cancelButton = document.createElement("button");
+                cancelButton.type = "button";
+                cancelButton.className = "danger";
+                cancelButton.textContent = "Cancel";
+                cancelButton.addEventListener("click", () => cancelRequest(item.id));
+                actionCell.appendChild(cancelButton);
+            } else {
+                actionCell.textContent = "—";
+            }
+            row.appendChild(actionCell);
+
+            rows.appendChild(row);
+        });
+    }
+
+    async function loadRequests() {
+        rows.replaceChildren();
+        const loadingRow = document.createElement("tr");
+        const loadingCell = addCell(loadingRow, "Loading your requests...");
+        loadingCell.colSpan = 8;
+        rows.appendChild(loadingRow);
+
+        try {
+            const items = await apiRequest(API_URL);
+            renderRequests(items);
+        } catch (error) {
+            rows.replaceChildren();
+            const row = document.createElement("tr");
+            const cell = addCell(row, error.message);
+            cell.colSpan = 8;
+            rows.appendChild(row);
+            showMessage(error.message, "error");
+        }
+    }
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        clearMessage();
+
+        if (deliveryInput.value && deliveryInput.value < pickupInput.value) {
+            showMessage("Delivery date cannot be before pickup date.", "error");
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Submitting...";
+
+        try {
+            await apiRequest(API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    item_details: document.getElementById("itemDetails").value.trim(),
+                    quantity: Number(document.getElementById("quantity").value),
+                    pickup_date: pickupInput.value,
+                    delivery_date: deliveryInput.value || null
+                })
+            });
+
+            form.reset();
+            pickupInput.min = localToday;
+            deliveryInput.min = localToday;
+            showMessage("Laundry request submitted successfully.", "success");
+            await loadRequests();
+        } catch (error) {
+            showMessage(error.message, "error");
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit Request";
+        }
+    });
+
+    async function cancelRequest(id) {
+        if (!confirm("Cancel this pending laundry request?")) return;
+
+        clearMessage();
+        try {
+            await apiRequest(`${API_URL}/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({status: "cancelled"})
+            });
+            showMessage("Laundry request cancelled.", "success");
+            await loadRequests();
+        } catch (error) {
+            showMessage(error.message, "error");
+        }
+    }
+
+    loadRequests();
+</script>
+</body>
+</html>
