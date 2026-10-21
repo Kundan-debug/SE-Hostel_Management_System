@@ -1,0 +1,542 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Common Facility Booking</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            color: #202b3c;
+        }
+
+        header {
+            background: #23395d;
+            color: white;
+            padding: 24px 7%;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 27px;
+        }
+
+        header p {
+            margin: 0;
+            color: #dbe5f4;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 3px 12px rgba(25, 42, 70, 0.06);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        .facility-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .facility-card {
+            border: 1px solid #e0e6ef;
+            border-radius: 10px;
+            padding: 18px;
+        }
+
+        .facility-card h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .facility-card p {
+            color: #667085;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.unavailable {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        button {
+            border: none;
+            border-radius: 7px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #3157a4;
+            color: white;
+        }
+
+        button:hover {
+            background: #244582;
+        }
+
+        button:disabled {
+            background: #aab3c2;
+            cursor: not-allowed;
+        }
+
+        .cancel-button {
+            background: #b42318;
+        }
+
+        .cancel-button:hover {
+            background: #912018;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            background: white;
+            font: inherit;
+        }
+
+        .form-action {
+            grid-column: 1 / -1;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .message.error {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 620px;
+        }
+
+        th, td {
+            padding: 13px;
+            border-bottom: 1px solid #e5eaf1;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+
+        .empty {
+            color: #667085;
+            padding: 12px 0;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 4px;
+            color: white;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 22px 20px;
+            }
+
+            .section {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Common Facility Booking</h1>
+        <p>Explore hostel facilities and manage your bookings.</p>
+        <a class="back-link" href="/room-details/">Back to Room Details</a>
+    </header>
+
+    <main>
+        <div id="message" class="message" role="status"></div>
+
+        <section class="section">
+            <h2>Available Facilities</h2>
+            <div id="facilities" class="facility-grid">
+                <p class="empty">Loading facilities...</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Book a Facility</h2>
+
+            <form id="booking-form">
+                <div>
+                    <label for="facility">Facility</label>
+                    <select id="facility" required>
+                        <option value="">Select a facility</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="booking-date">Date</label>
+                    <input type="date" id="booking-date" required>
+                </div>
+
+                <div>
+                    <label for="start-time">Start time</label>
+                    <input type="time" id="start-time" required>
+                </div>
+
+                <div>
+                    <label for="end-time">End time</label>
+                    <input type="time" id="end-time" required>
+                </div>
+
+                <div class="form-action">
+                    <button type="submit">Submit Booking</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="section">
+            <h2>My Booking History</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Facility</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booking-history">
+                        <tr>
+                            <td colspan="5" class="empty">
+                                Loading booking history...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const facilitiesContainer = document.getElementById("facilities");
+        const facilitySelect = document.getElementById("facility");
+        const historyBody = document.getElementById("booking-history");
+        const messageBox = document.getElementById("message");
+        const bookingForm = document.getElementById("booking-form");
+
+        let facilities = [];
+
+        document.getElementById("booking-date").min =
+            new Date().toLocaleDateString("en-CA");
+
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message ${type}`;
+        }
+
+        function clearMessage() {
+            messageBox.textContent = "";
+            messageBox.className = "message";
+        }
+
+        async function apiRequest(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...(options.body ? {
+                        "Content-Type": "application/json"
+                    } : {}),
+                    ...(options.headers || {})
+                }
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.redirected && response.url.includes("/login")) {
+                window.location.href = response.url;
+                throw new Error("Please log in to continue.");
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error || "The request could not be completed."
+                );
+            }
+
+            return data;
+        }
+
+        function renderFacilities() {
+            facilitiesContainer.replaceChildren();
+            facilitySelect.replaceChildren();
+
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = "Select a facility";
+            facilitySelect.appendChild(placeholder);
+
+            if (!facilities.length) {
+                const empty = document.createElement("p");
+                empty.className = "empty";
+                empty.textContent = "No facilities have been added yet.";
+                facilitiesContainer.appendChild(empty);
+                return;
+            }
+
+            facilities.forEach(facility => {
+                const card = document.createElement("article");
+                card.className = "facility-card";
+
+                const title = document.createElement("h3");
+                title.textContent = facility.name;
+
+                const description = document.createElement("p");
+                description.textContent =
+                    facility.description || "No description available.";
+
+                const location = document.createElement("p");
+                location.textContent = `Location: ${facility.location}`;
+
+                const capacity = document.createElement("p");
+                capacity.textContent = `Capacity: ${facility.capacity}`;
+
+                const status = document.createElement("span");
+                status.className = facility.is_available
+                    ? "status"
+                    : "status unavailable";
+                status.textContent = facility.is_available
+                    ? "Available"
+                    : "Unavailable";
+
+                card.append(title, description, location, capacity, status);
+
+                if (facility.is_available) {
+                    const selectButton = document.createElement("button");
+                    selectButton.type = "button";
+                    selectButton.style.marginTop = "14px";
+                    selectButton.textContent = "Select Facility";
+
+                    selectButton.addEventListener("click", () => {
+                        facilitySelect.value = String(facility.id);
+                        document.getElementById("booking-date").focus();
+                        document.getElementById("booking-form").scrollIntoView({
+                            behavior: "smooth",
+                            block: "center"
+                        });
+                    });
+
+                    card.appendChild(selectButton);
+
+                    const option = document.createElement("option");
+                    option.value = facility.id;
+                    option.textContent = facility.name;
+                    facilitySelect.appendChild(option);
+                }
+
+                facilitiesContainer.appendChild(card);
+            });
+        }
+
+        async function loadFacilities() {
+            try {
+                facilities = await apiRequest("/facilities/");
+                renderFacilities();
+            } catch (error) {
+                facilitiesContainer.textContent = "";
+                const paragraph = document.createElement("p");
+                paragraph.className = "empty";
+                paragraph.textContent = error.message;
+                facilitiesContainer.appendChild(paragraph);
+            }
+        }
+
+        async function loadBookings() {
+            try {
+                const bookings = await apiRequest("/facilities/bookings");
+                historyBody.replaceChildren();
+
+                if (!bookings.length) {
+                    const row = historyBody.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 5;
+                    cell.className = "empty";
+                    cell.textContent = "You have no bookings yet.";
+                    return;
+                }
+
+                bookings.forEach(booking => {
+                    const row = historyBody.insertRow();
+
+                    row.insertCell().textContent = booking.facility_name;
+                    row.insertCell().textContent = booking.booking_date;
+                    row.insertCell().textContent =
+                        `${booking.start_time} - ${booking.end_time}`;
+
+                    const statusCell = row.insertCell();
+                    statusCell.textContent = booking.status;
+
+                    const actionCell = row.insertCell();
+
+                    if (booking.status !== "Cancelled") {
+                        const cancelButton = document.createElement("button");
+                        cancelButton.type = "button";
+                        cancelButton.className = "cancel-button";
+                        cancelButton.textContent = "Cancel";
+
+                        cancelButton.addEventListener("click", async () => {
+                            if (!confirm("Cancel this booking?")) {
+                                return;
+                            }
+
+                            cancelButton.disabled = true;
+
+                            try {
+                                await apiRequest(
+                                    `/facilities/bookings/${booking.id}/cancel`,
+                                    { method: "POST" }
+                                );
+
+                                showMessage(
+                                    "Booking cancelled successfully.",
+                                    "success"
+                                );
+
+                                await loadBookings();
+                            } catch (error) {
+                                showMessage(error.message, "error");
+                                cancelButton.disabled = false;
+                            }
+                        });
+
+                        actionCell.appendChild(cancelButton);
+                    } else {
+                        actionCell.textContent = "—";
+                    }
+                });
+            } catch (error) {
+                historyBody.replaceChildren();
+                const row = historyBody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 5;
+                cell.className = "empty";
+                cell.textContent = error.message;
+            }
+        }
+
+        bookingForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            clearMessage();
+
+            const payload = {
+                facility_id: Number(facilitySelect.value),
+                booking_date: document.getElementById("booking-date").value,
+                start_time: document.getElementById("start-time").value,
+                end_time: document.getElementById("end-time").value
+            };
+
+            if (payload.end_time <= payload.start_time) {
+                showMessage(
+                    "End time must be later than start time.",
+                    "error"
+                );
+                return;
+            }
+
+            const submitButton = bookingForm.querySelector(
+                'button[type="submit"]'
+            );
+            submitButton.disabled = true;
+
+            try {
+                const result = await apiRequest("/facilities/bookings", {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+
+                showMessage(
+                    result.message || "Booking request submitted.",
+                    "success"
+                );
+
+                bookingForm.reset();
+                await loadBookings();
+            } catch (error) {
+                showMessage(error.message, "error");
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        async function initializePage() {
+            await loadFacilities();
+            await loadBookings();
+        }
+
+        initializePage();
+    </script>
+</body>
+</html>

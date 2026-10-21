@@ -210,3 +210,78 @@ class Room(db.Model):
     @property
     def available_beds(self):
         return self.capacity - self.occupied_beds
+
+
+class CommonFacility(db.Model):
+    __tablename__ = "common_facilities"
+    __table_args__ = (
+        CheckConstraint(
+            "capacity > 0",
+            name="ck_facility_capacity_positive",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.String(500), nullable=True)
+    location = db.Column(db.String(150), nullable=False)
+    capacity = db.Column(db.Integer, nullable=False)
+    is_available = db.Column(
+        db.Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    bookings = db.relationship(
+        "FacilityBooking",
+        back_populates="facility",
+        cascade="all, delete-orphan",
+    )
+
+
+class FacilityBooking(db.Model):
+    __tablename__ = "facility_bookings"
+    __table_args__ = (
+        CheckConstraint(
+            "end_time > start_time",
+            name="ck_booking_end_after_start",
+        ),
+        CheckConstraint(
+            "status IN ('Pending', 'Confirmed', 'Cancelled')",
+            name="ck_facility_booking_status",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    facility_id = db.Column(
+        db.Integer,
+        db.ForeignKey("common_facilities.id"),
+        nullable=False,
+        index=True,
+    )
+    booking_date = db.Column(db.Date, nullable=False, index=True)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="Pending",
+        index=True,
+    )
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    student = db.relationship("Student", backref="facility_bookings")
+    facility = db.relationship(
+        "CommonFacility",
+        back_populates="bookings",
+    )
