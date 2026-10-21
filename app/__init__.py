@@ -74,7 +74,13 @@ def create_app(test_config=None):
     db.init_app(app)
     login_manager.init_app(app)
 
-    from app.models import Student, Fee, Payment, LeaveApplication
+    from app.models import (
+        Student,
+        Fee,
+        Payment,
+        LeaveApplication,
+        Room,
+    )
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -320,7 +326,12 @@ def create_app(test_config=None):
         login_user(student)
         flash("Login successful!", "success")
 
-        return redirect(url_for("home"))
+        next_page = request.args.get("next", "")
+
+        if next_page.startswith("/") and not next_page.startswith("//"):
+            return redirect(next_page)
+
+        return redirect(url_for("room.room_details"))
 
     @app.route("/logout", methods=["POST"])
     @login_required
@@ -334,5 +345,8 @@ def create_app(test_config=None):
 
     from app.leave_routes import leave_bp
     app.register_blueprint(leave_bp)
-    
+
+    from app.room_routes import room_bp
+    app.register_blueprint(room_bp)
+
     return app
