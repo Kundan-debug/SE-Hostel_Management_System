@@ -1,3 +1,4 @@
+
 import os
 import re
 from pathlib import Path
@@ -67,6 +68,9 @@ def create_app(test_config=None):
     upload_folder.mkdir(parents=True, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = str(upload_folder)
 
+    if test_config:
+        app.config.update(test_config)
+
     db.init_app(app)
     login_manager.init_app(app)
 
@@ -82,6 +86,9 @@ def create_app(test_config=None):
     if not app.config.get("TESTING"):
         with app.app_context():
             db.create_all()
+
+    from app.laundry import laundry_bp
+    app.register_blueprint(laundry_bp)
 
     @app.route("/")
     def home():
