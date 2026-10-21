@@ -68,9 +68,6 @@ def create_app(test_config=None):
     upload_folder.mkdir(parents=True, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = str(upload_folder)
 
-    if test_config:
-        app.config.update(test_config)
-
     db.init_app(app)
     login_manager.init_app(app)
 
@@ -80,6 +77,8 @@ def create_app(test_config=None):
         Payment,
         LeaveApplication,
         Room,
+        CommonFacility,
+        FacilityBooking,
     )
 
     @login_manager.user_loader
@@ -294,7 +293,7 @@ def create_app(test_config=None):
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if current_user.is_authenticated:
-            return redirect(url_for("home"))
+            return redirect(url_for("room.room_details"))
 
         if request.method == "GET":
             return render_template("login.html")
@@ -348,5 +347,8 @@ def create_app(test_config=None):
 
     from app.room_routes import room_bp
     app.register_blueprint(room_bp)
+
+    from app.facility_routes import facility_bp
+    app.register_blueprint(facility_bp)
 
     return app

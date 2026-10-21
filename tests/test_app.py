@@ -1,6 +1,6 @@
 
 import pytest
-from datetime import date, timedelta
+from datetime import date, timedelta, time
 from decimal import Decimal
 
 from werkzeug.security import generate_password_hash
@@ -12,6 +12,8 @@ from app.models import (
     Payment,
     LaundryRequest,
     LeaveApplication,
+    CommonFacility,
+    FacilityBooking,
 )
 
 
@@ -93,7 +95,7 @@ def test_login_with_correct_credentials(client):
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/")
+    assert response.headers["Location"].endswith("/room-details/")
 
 
 def test_login_with_incorrect_password(client):
@@ -565,3 +567,296 @@ def test_student_cannot_cancel_non_pending_leave(
             LeaveApplication, application_id
         )
         assert application.status == "Approved"
+
+
+# Book Common Facility tests
+
+def create_test_facility(app, capacity=2, is_available=True):
+    with app.app_context():
+        facility = CommonFacility(
+            name="Test Gym",
+            description="Gym for testing",
+            location="Ground Floor",
+            capacity=capacity,
+            is_available=is_available,
+        )
+        db.session.add(facility)
+        db.session.commit()
+        return facility.id
+
+
+def valid_facility_booking(facility_id):
+    return {
+        "facility_id": facility_id,
+        "booking_date": (
+            date.today() + timedelta(days=1)
+        ).isoformat(),
+        "start_time": "10:00",
+        "end_time": "11:00",
+    }
+
+
+def test_facility_list_requires_login(client):
+    response = client.get("/facilities/")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_booking_history_requires_login(client):
+    response = client.get("/facilities/bookings")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_create_booking_requires_login(client):
+    response = client.post(
+        "/facilities/bookings",
+        json={
+            "facility_id": 1,
+            "booking_date": (
+                date.today() + timedelta(days=1)
+            ).isoformat(),
+            "start_time": "10:00",
+            "end_time": "11:00",
+        },
+    )
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_student_can_list_facilities(logged_in_client, app):
+    facility_id = create_test_facility(app)
+
+    response = logged_in_client.get("/facilities/")
+
+    assert response.status_code == 200
+    facilities = response.get_json()
+    assert len(facilities) == 1
+    assert facilities[0]["id"] == facility_id
+    assert facilities[0]["name"] == "Test Gym"
+    assert facilities[0]["is_available"] is True
+
+
+def test_student_can_create_booking(logged_in_client, app):
+    facility_id = create_test_facility(app)
+
+    response = logged_in_client.post(
+        "/facilities/bookings",
+        json=valid_facility_booking(facility_id),
+    )
+
+    assert response.status_code == 201
+    result = response.get_json()
+    assert result["booking"]["facility_id"] == facility_id
+    assert result["booking"]["facility_name"] == "Test Gym"
+    assert result["booking"]["status"] == "Pending"
+
+    with app.app_context():
+        booking = FacilityBooking.query.one()
+        assert booking.facility_id == facility_id
+        assert booking.status == "Pending"
+
+
+def test_booking_rejects_missing_fields(logged_in_client):
+    response = logged_in_client.post(
+        "/facilities/bookings",
+        json={"facility_id": 1},
+    )
+
+    assert response.status_code == 400
+
+
+def test_booking_rejects_invalid_date_or_time(logged_in_client):
+    response = logged_in_client.post(
+        "/facilities/bookings",
+        json={
+            "facility_id": 1,
+            "booking_date": "not-a-date",
+            "start_time": "10:00",
+            "end_time": "11:00",
+        },
+    )
+
+    assert response.status_code == 400
+
+
+def test_booking_rejects_past_date(logged_in_client, app):
+    facility_id = create_test_facility(app)
+    payload = valid_facility_booking(facility_id)
+    payload["booking_date"] = (
+        date.today() - timedelta(days=1)
+    ).isoformat()
+
+    response = logged_in_client.post(
+        "/facilities/bookings",
+        json=payload,
+    )
+
+    assert response.status_code == 400
+
+
+def test_booking_rejects_end_time_before_start_time(
+    logged_in_client, app
+):
+    facility_id = create_test_facility(app)
+    payload = valid_facility_booking(facility_id)
+    payload["start_time"] = "11:00"
+    payload["end_time"] = "10:00"
+
+    response = logged_in_client.post(
+        "/facilities/bookings",
+        json=payload,
+    )
+
+    assert response.status_code == 400
+
+
+def test_booking_rejects_nonexistent_facility(logged_in_client):
+    response = logged_in_client.post(
+        "/facilities/bookings",
+        json=valid_facility_booking(9999),
+    )
+
+    assert response.status_code == 404
+
+
+def test_booking_rejects_unavailable_facility(
+    logged_in_client, app
+):
+    facility_id = create_test_facility(
+        app, is_available=False
+    )
+
+    response = logged_in_client.post(
+        "/facilities/bookings",
+        json=valid_facility_booking(facility_id),
+    )
+
+    assert response.status_code == 409
+
+
+def test_booking_rejects_fully_booked_time_slot(
+    logged_in_client, app
+):
+    facility_id = create_test_facility(app, capacity=1)
+    payload = valid_facility_booking(facility_id)
+
+    first_response = logged_in_client.post(
+        "/facilities/bookings",
+        json=payload,
+    )
+    assert first_response.status_code == 201
+
+    second_response = logged_in_client.post(
+        "/facilities/bookings",
+        json=payload,
+    )
+    assert second_response.status_code == 409
+
+
+def test_student_can_view_own_booking_history(
+    logged_in_client, app
+):
+    facility_id = create_test_facility(app)
+
+    logged_in_client.post(
+        "/facilities/bookings",
+        json=valid_facility_booking(facility_id),
+    )
+
+    response = logged_in_client.get("/facilities/bookings")
+
+    assert response.status_code == 200
+    bookings = response.get_json()
+    assert len(bookings) == 1
+    assert bookings[0]["facility_name"] == "Test Gym"
+    assert bookings[0]["status"] == "Pending"
+
+
+def test_student_can_cancel_own_booking(
+    logged_in_client, app
+):
+    facility_id = create_test_facility(app)
+
+    created = logged_in_client.post(
+        "/facilities/bookings",
+        json=valid_facility_booking(facility_id),
+    )
+    booking_id = created.get_json()["booking"]["id"]
+
+    response = logged_in_client.post(
+        f"/facilities/bookings/{booking_id}/cancel"
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["status"] == "Cancelled"
+
+    with app.app_context():
+        booking = db.session.get(FacilityBooking, booking_id)
+        assert booking.status == "Cancelled"
+
+
+def test_student_cannot_cancel_another_students_booking(
+    logged_in_client, app
+):
+    facility_id = create_test_facility(app)
+
+    with app.app_context():
+        other_student = Student(
+            full_name="Other Student",
+            email="other@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Other Hostel",
+            room_number="202",
+            id_proof_filename="other.pdf",
+        )
+        db.session.add(other_student)
+        db.session.flush()
+
+        booking = FacilityBooking(
+            student_id=other_student.id,
+            facility_id=facility_id,
+            booking_date=date.today() + timedelta(days=1),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status="Pending",
+        )
+        db.session.add(booking)
+        db.session.commit()
+        booking_id = booking.id
+
+    response = logged_in_client.post(
+        f"/facilities/bookings/{booking_id}/cancel"
+    )
+
+    assert response.status_code == 404
+
+    with app.app_context():
+        booking = db.session.get(FacilityBooking, booking_id)
+        assert booking.status == "Pending"
+
+
+def test_student_cannot_cancel_booking_twice(
+    logged_in_client, app
+):
+    facility_id = create_test_facility(app)
+
+    created = logged_in_client.post(
+        "/facilities/bookings",
+        json=valid_facility_booking(facility_id),
+    )
+    booking_id = created.get_json()["booking"]["id"]
+
+    first_response = logged_in_client.post(
+        f"/facilities/bookings/{booking_id}/cancel"
+    )
+    assert first_response.status_code == 200
+
+    second_response = logged_in_client.post(
+        f"/facilities/bookings/{booking_id}/cancel"
+    )
+    assert second_response.status_code == 409
