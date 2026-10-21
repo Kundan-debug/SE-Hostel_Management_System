@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 from flask import Blueprint, jsonify, request
 
 from app import db
-from app.laundry.models import LaundryRequest
+from app.models import LaundryRequest
 
 laundry_bp = Blueprint("laundry", __name__, url_prefix="/api/laundry")
 

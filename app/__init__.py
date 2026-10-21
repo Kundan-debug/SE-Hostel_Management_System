@@ -87,7 +87,7 @@ def create_app(test_config=None):
         with app.app_context():
             db.create_all()
 
-    from app.laundry import laundry_bp
+    from app.laundry_routes import laundry_bp
     app.register_blueprint(laundry_bp)
 
     @app.route("/")
