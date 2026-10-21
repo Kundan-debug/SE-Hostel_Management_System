@@ -1,4 +1,6 @@
 
+from datetime import datetime, timezone
+
 from flask_login import UserMixin
 from sqlalchemy import CheckConstraint
 
@@ -33,7 +35,10 @@ class Fee(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(
-        db.Integer, db.ForeignKey("students.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
     )
     description = db.Column(db.String(200), nullable=False)
     fee_type = db.Column(db.String(50), nullable=False)
@@ -57,28 +62,41 @@ class Payment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     fee_id = db.Column(
-        db.Integer, db.ForeignKey("fees.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("fees.id"),
+        nullable=False,
+        index=True,
     )
     student_id = db.Column(
-        db.Integer, db.ForeignKey("students.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
     )
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     payment_date = db.Column(
-        db.DateTime, nullable=False, default=db.func.now()
+        db.DateTime,
+        nullable=False,
+        default=db.func.now(),
     )
     payment_method = db.Column(
-        db.String(50), nullable=False, default="Demo payment"
+        db.String(50),
+        nullable=False,
+        default="Demo payment",
     )
     transaction_reference = db.Column(
-        db.String(100), unique=True, nullable=False
+        db.String(100),
+        unique=True,
+        nullable=False,
     )
     status = db.Column(
-        db.String(20), nullable=False, default="Pending"
+        db.String(20),
+        nullable=False,
+        default="Pending",
     )
 
     fee = db.relationship("Fee", back_populates="payments")
     student = db.relationship("Student", backref="payments")
-from datetime import datetime, timezone
 
 
 class LaundryRequest(db.Model):
@@ -91,11 +109,16 @@ class LaundryRequest(db.Model):
     pickup_date = db.Column(db.Date, nullable=False)
     delivery_date = db.Column(db.Date, nullable=True)
     status = db.Column(
-        db.String(20), nullable=False, default="pending", index=True
+        db.String(20),
+        nullable=False,
+        default="pending",
+        index=True,
     )
     charges = db.Column(db.Numeric(10, 2), nullable=False, default=0)
     payment_status = db.Column(
-        db.String(20), nullable=False, default="unpaid"
+        db.String(20),
+        nullable=False,
+        default="unpaid",
     )
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -111,17 +134,15 @@ class LaundryRequest(db.Model):
             "quantity": self.quantity,
             "pickup_date": self.pickup_date.isoformat(),
             "delivery_date": (
-                self.delivery_date.isoformat() if self.delivery_date else
-None
+                self.delivery_date.isoformat()
+                if self.delivery_date
+                else None
             ),
             "status": self.status,
             "charges": float(self.charges),
             "payment_status": self.payment_status,
             "created_at": self.created_at.isoformat(),
         }
-
-
-from datetime import datetime, timezone
 
 
 class LeaveApplication(db.Model):
@@ -139,7 +160,10 @@ class LeaveApplication(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     reason = db.Column(db.String(1000), nullable=False)
     status = db.Column(
-        db.String(20), nullable=False, default="Pending", index=True
+        db.String(20),
+        nullable=False,
+        default="Pending",
+        index=True,
     )
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -149,3 +173,40 @@ class LeaveApplication(db.Model):
 
     student = db.relationship("Student", backref="leave_applications")
 
+
+class Room(db.Model):
+    __tablename__ = "rooms"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "hostel_name",
+            "room_number",
+            name="uq_room_hostel_number",
+        ),
+        CheckConstraint(
+            "capacity > 0",
+            name="ck_room_capacity_positive",
+        ),
+        CheckConstraint(
+            "occupied_beds >= 0 AND occupied_beds <= capacity",
+            name="ck_room_occupancy",
+        ),
+        CheckConstraint(
+            "maintenance_status IN ('Available', 'Under Maintenance')",
+            name="ck_room_maintenance_status",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    hostel_name = db.Column(db.String(100), nullable=False)
+    room_number = db.Column(db.String(20), nullable=False)
+    capacity = db.Column(db.Integer, nullable=False)
+    occupied_beds = db.Column(db.Integer, nullable=False, default=0)
+    maintenance_status = db.Column(
+        db.String(30),
+        nullable=False,
+        default="Available",
+    )
+
+    @property
+    def available_beds(self):
+        return self.capacity - self.occupied_beds
