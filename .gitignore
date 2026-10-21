@@ -6,3 +6,6 @@ __pycache__/
 .pytest_cache/
 .venv/
 .env
+
+# Uploaded files may contain sensitive student documents
+/app/static/uploads/
