@@ -74,7 +74,7 @@ def create_app(test_config=None):
     db.init_app(app)
     login_manager.init_app(app)
 
-    from app.models import Student, Fee, Payment
+    from app.models import Student, Fee, Payment, LeaveApplication
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -331,5 +331,8 @@ def create_app(test_config=None):
 
     from app.fees import fees_bp
     app.register_blueprint(fees_bp)
+
+    from app.leave_routes import leave_bp
+    app.register_blueprint(leave_bp)
     
     return app

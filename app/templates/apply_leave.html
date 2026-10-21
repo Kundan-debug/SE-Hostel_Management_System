@@ -1,0 +1,243 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Leave | Hostel Management</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 16px;
+            font-family: Arial, sans-serif;
+            background: #f3f6fb;
+            color: #1f2937;
+        }
+
+        .container { max-width: 1000px; margin: auto; }
+
+        h1 { margin-bottom: 8px; }
+        .subtitle { color: #64748b; margin-bottom: 28px; }
+
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 7px; }
+        .full { grid-column: 1 / -1; }
+
+        label { font-weight: 600; font-size: 14px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font: inherit;
+            background: white;
+        }
+
+        textarea { min-height: 110px; resize: vertical; }
+
+        button, .back-link {
+            display: inline-block;
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 16px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .primary { background: #2563eb; color: white; }
+        .cancel { background: #fee2e2; color: #991b1b; padding: 8px 10px; }
+        .back-link { background: #e2e8f0; color: #1e293b; }
+
+        .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .flash {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .flash.error { background: #fee2e2; color: #991b1b; }
+        .flash.success { background: #dcfce7; color: #166534; }
+
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            padding: 13px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th { color: #475569; font-size: 13px; }
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status.approved { background: #dcfce7; color: #166534; }
+        .status.rejected, .status.cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty { color: #64748b; padding: 18px 0; }
+
+        @media (max-width: 650px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full { grid-column: auto; }
+            body { padding: 20px 12px; }
+            .panel { padding: 17px; }
+        }
+    </style>
+</head>
+<body>
+<main class="container">
+    <h1>Apply for Leave</h1>
+    <p class="subtitle">Submit a hostel leave request and track its status.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="panel">
+        <h2>New Application</h2>
+
+        <form method="POST" action="{{ url_for('leave.apply_leave') }}">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="leave_type">Leave type</label>
+                    <select id="leave_type" name="leave_type" required>
+                        <option value="">Select type</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Medical">Medical</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="start_date">Start date</label>
+                    <input id="start_date" name="start_date"
+                           type="date" required>
+                </div>
+
+                <div class="field">
+                    <label for="end_date">End date</label>
+                    <input id="end_date" name="end_date"
+                           type="date" required>
+                </div>
+
+                <div class="field full">
+                    <label for="reason">Reason for leave</label>
+                    <textarea id="reason" name="reason" maxlength="2000"
+                              placeholder="Explain why you need leave..." required></textarea>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="primary" type="submit">Submit Application</button>
+                <a class="back-link" href="{{ url_for('leave.apply_leave') }}">Back</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>My Leave Applications</h2>
+
+        {% if applications %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Dates</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in applications %}
+                        <tr>
+                            <td>{{ item.leave_type }}</td>
+                            <td>
+                                {{ item.start_date.strftime('%d %b %Y') }}<br>
+                                to {{ item.end_date.strftime('%d %b %Y') }}
+                            </td>
+                            <td>{{ item.reason }}</td>
+                            <td>
+                                <span class="status {{ item.status|lower }}">
+                                    {{ item.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.status == 'Pending' %}
+                                    <form method="POST"
+                                          action="{{ url_for('leave.cancel_leave', application_id=item.id) }}"
+                                          onsubmit="return confirm('Cancel this leave application?');">
+                                        <button class="cancel" type="submit">Cancel</button>
+                                    </form>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">You have not submitted any leave applications yet.</p>
+        {% endif %}
+    </section>
+</main>
+
+<script>
+    const startInput = document.getElementById("start_date");
+    const endInput = document.getElementById("end_date");
+
+    const today = new Date();
+    const localToday = new Date(
+        today.getTime() - today.getTimezoneOffset() * 60000
+    ).toISOString().split("T")[0];
+
+    startInput.min = localToday;
+    endInput.min = localToday;
+
+    startInput.addEventListener("change", () => {
+        endInput.min = startInput.value || localToday;
+        if (endInput.value && endInput.value < endInput.min) {
+            endInput.value = endInput.min;
+        }
+    });
+</script>
+</body>
+</html>

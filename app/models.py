@@ -119,3 +119,33 @@ None
             "payment_status": self.payment_status,
             "created_at": self.created_at.isoformat(),
         }
+
+
+from datetime import datetime, timezone
+
+
+class LeaveApplication(db.Model):
+    __tablename__ = "leave_applications"
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    leave_type = db.Column(db.String(30), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    reason = db.Column(db.String(1000), nullable=False)
+    status = db.Column(
+        db.String(20), nullable=False, default="Pending", index=True
+    )
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    student = db.relationship("Student", backref="leave_applications")
+
