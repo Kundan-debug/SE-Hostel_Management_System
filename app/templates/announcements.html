@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications & Announcements | Hostel Management</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         sans-serif;
+            background: #f4f6fb;
+            color: #202938;
+        }
+
+        header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e9f2;
+            padding: 20px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            font-size: 21px;
+            margin: 0;
+        }
+
+        header a {
+            color: #4356c5;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 38px auto;
+            padding: 0 20px;
+        }
+
+        .intro {
+            margin-bottom: 28px;
+        }
+
+        .intro h2 {
+            font-size: 30px;
+            margin: 0 0 8px;
+        }
+
+        .intro p {
+            color: #697386;
+            margin: 0;
+        }
+
+        .announcement {
+            background: #ffffff;
+            border: 1px solid #e5e9f2;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(25, 40, 80, 0.04);
+        }
+
+        .announcement-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .category {
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 20px;
+            background: #eef0ff;
+            color: #4356c5;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .date {
+            font-size: 13px;
+            color: #778195;
+        }
+
+        .announcement h3 {
+            margin: 0 0 10px;
+            font-size: 19px;
+        }
+
+        .message {
+            color: #566174;
+            line-height: 1.7;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+
+        .empty {
+            background: #ffffff;
+            text-align: center;
+            border: 1px dashed #cbd2e1;
+            border-radius: 14px;
+            padding: 48px 20px;
+            color: #697386;
+        }
+
+        .empty h3 {
+            color: #202938;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Hostel Management System</h1>
+        <a href="{{ url_for('home') }}">← Back to Dashboard</a>
+    </header>
+
+    <main>
+        <section class="intro">
+            <h2>Notifications & Announcements</h2>
+            <p>Stay updated with the latest hostel news and notices.</p>
+        </section>
+
+        {% if announcements %}
+            {% for announcement in announcements %}
+                <article class="announcement">
+                    <div class="announcement-top">
+                        <span class="category">
+                            {{ announcement.category }}
+                        </span>
+                        <span class="date">
+                            {{ announcement.published_at.strftime('%d %b %Y, %I:%M %p') }}
+                        </span>
+                    </div>
+
+                    <h3>{{ announcement.title }}</h3>
+
+                    <div class="message">{{ announcement.message }}</div>
+                </article>
+            {% endfor %}
+        {% else %}
+            <section class="empty">
+                <h3>You're all caught up!</h3>
+                <p>There are no current announcements to display.</p>
+            </section>
+        {% endif %}
+    </main>
+</body>
+</html>

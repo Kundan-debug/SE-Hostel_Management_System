@@ -79,6 +79,7 @@ def create_app(test_config=None):
         Room,
         CommonFacility,
         FacilityBooking,
+        Announcement,
     )
 
     @login_manager.user_loader
@@ -351,5 +352,8 @@ def create_app(test_config=None):
 
     from app.profile_routes import profile_bp
     app.register_blueprint(profile_bp)
+
+    from app.announcement_routes import announcement_bp
+    app.register_blueprint(announcement_bp)
 
     return app

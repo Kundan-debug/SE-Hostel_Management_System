@@ -1,6 +1,7 @@
 
 import pytest
 from io import BytesIO
+from datetime import datetime
 from datetime import date, timedelta, time
 from decimal import Decimal
 
@@ -15,6 +16,7 @@ from app.models import (
     LeaveApplication,
     CommonFacility,
     FacilityBooking,
+    Announcement,
 )
 
 
@@ -996,3 +998,86 @@ def test_student_can_upload_profile_photo(logged_in_client, app):
 
         assert len(photos) == 1
         assert photos[0].read_bytes() == b"test image content"
+
+
+# Notifications and announcements tests
+
+def test_announcements_require_login(client):
+    response = client.get("/announcements/")
+
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_student_can_view_announcements(logged_in_client, app):
+    with app.app_context():
+        announcement = Announcement(
+            title="Water Supply Maintenance",
+            message="Water supply will be interrupted tomorrow.",
+            category="Maintenance",
+        )
+        db.session.add(announcement)
+        db.session.commit()
+
+    response = logged_in_client.get("/announcements/")
+
+    assert response.status_code == 200
+    assert b"Notifications & Announcements" in response.data
+    assert b"Water Supply Maintenance" in response.data
+    assert b"Water supply will be interrupted tomorrow." in response.data
+    assert b"Maintenance" in response.data
+
+
+def test_announcements_are_ordered_newest_first(
+    logged_in_client, app
+):
+    with app.app_context():
+        older = Announcement(
+            title="Older Announcement",
+            message="This is an older notice.",
+            category="General",
+            published_at=datetime(2026, 1, 1),
+        )
+        newer = Announcement(
+            title="Newer Announcement",
+            message="This is a newer notice.",
+            category="Events",
+            published_at=datetime(2026, 2, 1),
+        )
+
+        db.session.add_all([older, newer])
+        db.session.commit()
+
+    response = logged_in_client.get("/announcements/")
+
+    assert response.status_code == 200
+    older_position = response.data.index(b"Older Announcement")
+    newer_position = response.data.index(b"Newer Announcement")
+    assert newer_position < older_position
+
+
+def test_expired_announcements_are_hidden(
+    logged_in_client, app
+):
+    with app.app_context():
+        expired = Announcement(
+            title="Expired Notice",
+            message="This notice should no longer appear.",
+            category="General",
+            published_at=datetime(2026, 1, 1),
+            expires_at=datetime(2026, 1, 2),
+        )
+        current = Announcement(
+            title="Current Notice",
+            message="This notice is still available.",
+            category="General",
+        )
+
+        db.session.add_all([expired, current])
+        db.session.commit()
+
+    response = logged_in_client.get("/announcements/")
+
+    assert response.status_code == 200
+    assert b"Current Notice" in response.data
+    assert b"Expired Notice" not in response.data

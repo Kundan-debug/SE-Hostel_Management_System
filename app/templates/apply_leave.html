@@ -82,6 +82,7 @@
         .table-wrap { overflow-x: auto; }
 
         table { width: 100%; border-collapse: collapse; }
+
         th, td {
             padding: 13px 10px;
             border-bottom: 1px solid #e2e8f0;
@@ -90,6 +91,7 @@
         }
 
         th { color: #475569; font-size: 13px; }
+
         .status {
             display: inline-block;
             padding: 5px 9px;
@@ -101,6 +103,7 @@
         }
 
         .status.approved { background: #dcfce7; color: #166534; }
+
         .status.rejected, .status.cancelled {
             background: #fee2e2;
             color: #991b1b;
@@ -158,13 +161,14 @@
                 <div class="field full">
                     <label for="reason">Reason for leave</label>
                     <textarea id="reason" name="reason" maxlength="2000"
-                              placeholder="Explain why you need leave..." required></textarea>
+                              placeholder="Explain why you need leave..."
+                              required></textarea>
                 </div>
             </div>
 
             <div class="actions">
                 <button class="primary" type="submit">Submit Application</button>
-                <a class="back-link" href="{{ url_for('leave.apply_leave') }}">Back</a>
+                <a class="back-link" href="{{ url_for('home') }}">Back</a>
             </div>
         </form>
     </section>
@@ -234,6 +238,7 @@
 
     startInput.addEventListener("change", () => {
         endInput.min = startInput.value || localToday;
+
         if (endInput.value && endInput.value < endInput.min) {
             endInput.value = endInput.min;
         }
