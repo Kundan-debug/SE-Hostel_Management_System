@@ -96,11 +96,9 @@ def create_app(test_config=None):
     app.register_blueprint(laundry_bp)
 
     @app.route("/")
+    @login_required
     def home():
-        return {
-            "message": "Hostel Management System API",
-            "status": "running",
-        }
+        return render_template("home.html")
 
     @app.route("/register", methods=["GET", "POST"])
     def register():
@@ -350,5 +348,8 @@ def create_app(test_config=None):
 
     from app.facility_routes import facility_bp
     app.register_blueprint(facility_bp)
+
+    from app.profile_routes import profile_bp
+    app.register_blueprint(profile_bp)
 
     return app

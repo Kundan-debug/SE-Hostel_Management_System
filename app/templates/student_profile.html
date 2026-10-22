@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Hostel Management System</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f3f5f9;
+            color: #243047;
+        }
+
+        header {
+            background: #243b64;
+            color: white;
+            padding: 22px 7%;
+        }
+
+        header h1 { margin: 0; font-size: 25px; }
+        header p { margin: 6px 0 0; color: #dbeafe; font-size: 14px; }
+
+        main { width: min(950px, 92%); margin: 32px auto; }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 14px;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, .06);
+            margin-bottom: 22px;
+        }
+
+        h2 { margin: 0 0 8px; font-size: 22px; }
+        .subtitle { color: #64748b; font-size: 14px; margin: 0 0 22px; }
+
+        .profile-top {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e2e8f0;
+            border: 3px solid #dbeafe;
+        }
+
+        .placeholder {
+            display: grid;
+            place-items: center;
+            font-size: 38px;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 7px;
+            color: #475569;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font: inherit;
+            color: #243047;
+        }
+
+        input:focus {
+            outline: 2px solid #bfdbfe;
+            border-color: #2563eb;
+        }
+
+        .field-error { color: #b91c1c; font-size: 13px; margin-top: 5px; }
+
+        button, .link-button {
+            display: inline-block;
+            padding: 11px 17px;
+            border: 0;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:hover, .link-button:hover { background: #1d4ed8; }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .readonly { background: #f8fafc; }
+
+        .notice {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #f0fdf4;
+            color: #166534;
+            font-size: 14px;
+        }
+
+        .notice.error { background: #fef2f2; color: #991b1b; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            .card { padding: 20px; }
+            main { margin: 22px auto; }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>Hostel Management System</h1>
+    <p>Manage your student profile</p>
+</header>
+
+<main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="notice {{ 'error' if category == 'error' else '' }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    {% if errors.get('general') %}
+        <div class="notice error">{{ errors['general'] }}</div>
+    {% endif %}
+
+    <section class="card">
+        <div class="profile-top">
+            {% if profile_photo %}
+                <img class="avatar"
+                     src="{{ url_for('static', filename='uploads/' ~ profile_photo) }}"
+                     alt="Profile photo">
+            {% else %}
+                <div class="avatar placeholder" aria-label="No profile photo">
+                    {{ student.full_name[0]|upper }}
+                </div>
+            {% endif %}
+
+            <div>
+                <h2>{{ student.full_name }}</h2>
+                <p class="subtitle">SRN: {{ student.srn }}</p>
+
+                <form action="{{ url_for('profile.upload_profile_photo') }}"
+                      method="post" enctype="multipart/form-data">
+                    <label for="profile_photo">Change profile photo</label>
+                    <input id="profile_photo" name="profile_photo"
+                           type="file"
+                           accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                           required>
+                    <div class="actions">
+                        <button type="submit">Upload Photo</button>
+                    </div>
+                    <p class="subtitle">JPG or PNG, maximum 2 MB.</p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Personal Information</h2>
+        <p class="subtitle">
+            Update your personal and parent/guardian contact details.
+        </p>
+
+        <form action="{{ url_for('profile.edit_profile') }}" method="post">
+            <div class="grid">
+                <div>
+                    <label for="full_name">Full name</label>
+                    <input id="full_name" name="full_name"
+                           maxlength="100" required
+                           value="{{ form_data.get('full_name', student.full_name) }}">
+                    {% if errors.get('full_name') %}
+                        <div class="field-error">{{ errors['full_name'] }}</div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="email">Email address</label>
+                    <input id="email" name="email" type="email"
+                           maxlength="254" required
+                           value="{{ form_data.get('email', student.email) }}">
+                    {% if errors.get('email') %}
+                        <div class="field-error">{{ errors['email'] }}</div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="contact_number">Contact number</label>
+                    <input id="contact_number" name="contact_number"
+                           inputmode="numeric" pattern="[0-9]{10}"
+                           maxlength="10" required
+                           value="{{ form_data.get('contact_number', student.contact_number) }}">
+                    {% if errors.get('contact_number') %}
+                        <div class="field-error">{{ errors['contact_number'] }}</div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="parent_name">Parent/guardian name</label>
+                    <input id="parent_name" name="parent_name"
+                           maxlength="100" required
+                           value="{{ form_data.get('parent_name', student.parent_name) }}">
+                    {% if errors.get('parent_name') %}
+                        <div class="field-error">{{ errors['parent_name'] }}</div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="parent_contact_number">
+                        Parent/guardian contact
+                    </label>
+                    <input id="parent_contact_number"
+                           name="parent_contact_number"
+                           inputmode="numeric" pattern="[0-9]{10}"
+                           maxlength="10" required
+                           value="{{ form_data.get('parent_contact_number', student.parent_contact_number) }}">
+                    {% if errors.get('parent_contact_number') %}
+                        <div class="field-error">
+                            {{ errors['parent_contact_number'] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="srn">Student registration number (SRN)</label>
+                    <input id="srn" value="{{ student.srn }}"
+                           readonly class="readonly">
+                </div>
+
+                <div>
+                    <label for="hostel_name">Hostel</label>
+                    <input id="hostel_name" value="{{ student.hostel_name }}"
+                           readonly class="readonly">
+                </div>
+
+                <div>
+                    <label for="room_number">Room number</label>
+                    <input id="room_number" value="{{ student.room_number }}"
+                           readonly class="readonly">
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit">Save Changes</button>
+                <a class="link-button"
+                   href="{{ url_for('room.room_details') }}">
+                    View Room Details
+                </a>
+                <a class="link-button" href="{{ url_for('home') }}">Home</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>
