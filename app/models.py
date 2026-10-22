@@ -303,3 +303,165 @@ class Announcement(db.Model):
         default=lambda: datetime.now(timezone.utc),
     )
     expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+
+class MessMenu(db.Model):
+    __tablename__ = "mess_menu"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "day_of_week",
+            "meal_type",
+            name="uq_mess_menu_day_meal",
+        ),
+        CheckConstraint(
+            "meal_type IN ('Breakfast', 'Lunch', 'Snacks', 'Dinner')",
+            name="ck_mess_menu_meal_type",
+        ),
+        CheckConstraint(
+            "end_time > start_time",
+            name="ck_mess_menu_time",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    day_of_week = db.Column(db.String(10), nullable=False)
+    meal_type = db.Column(db.String(20), nullable=False)
+    menu_items = db.Column(db.Text, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    is_available = db.Column(db.Boolean, nullable=False, default=True)
+
+
+class MealRegistration(db.Model):
+    __tablename__ = "meal_registrations"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "student_id",
+            "menu_id",
+            name="uq_meal_registration_student_menu",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    menu_id = db.Column(
+        db.Integer,
+        db.ForeignKey("mess_menu.id"),
+        nullable=False,
+        index=True,
+    )
+    registered_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    student = db.relationship("Student", backref="meal_registrations")
+    menu = db.relationship("MessMenu", backref="registrations")
+
+
+class MessAttendance(db.Model):
+    __tablename__ = "mess_attendance"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "student_id",
+            "attendance_date",
+            "meal_type",
+            name="uq_mess_attendance_student_meal_date",
+        ),
+        CheckConstraint(
+            "meal_type IN ('Breakfast', 'Lunch', 'Snacks', 'Dinner')",
+            name="ck_mess_attendance_meal_type",
+        ),
+        CheckConstraint(
+            "status IN ('Present', 'Absent')",
+            name="ck_mess_attendance_status",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    attendance_date = db.Column(db.Date, nullable=False, index=True)
+    meal_type = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(10), nullable=False)
+
+    student = db.relationship("Student", backref="mess_attendance")
+
+
+class MessFeedback(db.Model):
+    __tablename__ = "mess_feedback"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('Feedback', 'Complaint')",
+            name="ck_mess_feedback_category",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    category = db.Column(db.String(20), nullable=False)
+    message = db.Column(db.String(1000), nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    student = db.relationship("Student", backref="mess_feedback")
+
+
+class MessHoliday(db.Model):
+    __tablename__ = "mess_holidays"
+
+    id = db.Column(db.Integer, primary_key=True)
+    holiday_date = db.Column(db.Date, unique=True, nullable=False, index=True)
+    title = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.String(500), nullable=True)
+
+
+class MessFee(db.Model):
+    __tablename__ = "mess_fees"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "student_id",
+            "billing_month",
+            name="uq_mess_fee_student_month",
+        ),
+        CheckConstraint(
+            "amount >= 0",
+            name="ck_mess_fee_amount_nonnegative",
+        ),
+        CheckConstraint(
+            "status IN ('Due', 'Paid')",
+            name="ck_mess_fee_status",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    billing_month = db.Column(db.String(7), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    due_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(10), nullable=False, default="Due")
+
+    student = db.relationship("Student", backref="mess_fees")
