@@ -17,6 +17,12 @@ from app.models import (
     CommonFacility,
     FacilityBooking,
     Announcement,
+    MessMenu,
+    MealRegistration,
+    MessAttendance,
+    MessFeedback,
+    MessHoliday,
+    MessFee,
 )
 
 
@@ -1081,3 +1087,213 @@ def test_expired_announcements_are_hidden(
     assert response.status_code == 200
     assert b"Current Notice" in response.data
     assert b"Expired Notice" not in response.data
+
+
+# Manage Mess tests
+
+def test_manage_mess_requires_login(client):
+    response = client.get("/mess/")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_manage_mess_page_loads(logged_in_client):
+    response = logged_in_client.get("/mess/")
+    assert response.status_code == 200
+    assert b"Weekly Menu" in response.data
+    assert b"Mess Attendance" in response.data
+    assert b"Feedback" in response.data
+    assert b"Mess Holidays" in response.data
+    assert b"Mess Fee Information" in response.data
+    assert b"currently unavailable" in response.data
+
+
+def test_student_can_view_weekly_menu(logged_in_client, app):
+    with app.app_context():
+        db.session.add(
+            MessMenu(
+                day_of_week="Monday",
+                meal_type="Breakfast",
+                menu_items="Idli, sambar and chutney",
+                start_time=time(7, 30),
+                end_time=time(9, 0),
+            )
+        )
+        db.session.commit()
+
+    response = logged_in_client.get("/mess/")
+    assert response.status_code == 200
+    assert b"Idli, sambar and chutney" in response.data
+    assert b"Monday" in response.data
+
+
+def test_student_can_register_for_meal(logged_in_client, app):
+    with app.app_context():
+        menu = MessMenu(
+            day_of_week="Tuesday",
+            meal_type="Lunch",
+            menu_items="Rice and dal",
+            start_time=time(12, 30),
+            end_time=time(14, 0),
+        )
+        db.session.add(menu)
+        db.session.commit()
+        menu_id = menu.id
+
+    response = logged_in_client.post(
+        "/mess/register",
+        data={"menu_id": str(menu_id)},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Meal registration successful" in response.data
+
+    with app.app_context():
+        registration = MealRegistration.query.filter_by(
+            student_id=1,
+            menu_id=menu_id,
+        ).first()
+        assert registration is not None
+
+
+def test_student_cannot_register_for_same_meal_twice(
+    logged_in_client, app
+):
+    with app.app_context():
+        menu = MessMenu(
+            day_of_week="Wednesday",
+            meal_type="Dinner",
+            menu_items="Chapati and curry",
+            start_time=time(19, 0),
+            end_time=time(20, 30),
+        )
+        db.session.add(menu)
+        db.session.commit()
+        menu_id = menu.id
+
+    logged_in_client.post(
+        "/mess/register", data={"menu_id": str(menu_id)}
+    )
+    response = logged_in_client.post(
+        "/mess/register",
+        data={"menu_id": str(menu_id)},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"already registered" in response.data
+
+    with app.app_context():
+        assert MealRegistration.query.filter_by(
+            student_id=1,
+            menu_id=menu_id,
+        ).count() == 1
+
+
+def test_student_cannot_register_for_unavailable_meal(
+    logged_in_client, app
+):
+    with app.app_context():
+        menu = MessMenu(
+            day_of_week="Thursday",
+            meal_type="Lunch",
+            menu_items="Vegetable pulao",
+            start_time=time(12, 0),
+            end_time=time(13, 30),
+            is_available=False,
+        )
+        db.session.add(menu)
+        db.session.commit()
+        menu_id = menu.id
+
+    response = logged_in_client.post(
+        "/mess/register",
+        data={"menu_id": str(menu_id)},
+        follow_redirects=True,
+    )
+
+    assert b"unavailable for registration" in response.data
+
+    with app.app_context():
+        assert MealRegistration.query.filter_by(
+            student_id=1,
+            menu_id=menu_id,
+        ).count() == 0
+
+
+def test_student_can_submit_mess_feedback(logged_in_client, app):
+    response = logged_in_client.post(
+        "/mess/feedback",
+        data={
+            "category": "Feedback",
+            "message": "The food quality was good.",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Your submission has been recorded" in response.data
+    assert b"The food quality was good." in response.data
+
+    with app.app_context():
+        item = MessFeedback.query.filter_by(student_id=1).first()
+        assert item is not None
+        assert item.category == "Feedback"
+
+
+def test_mess_feedback_rejects_invalid_category(logged_in_client, app):
+    response = logged_in_client.post(
+        "/mess/feedback",
+        data={"category": "Other", "message": "Test message"},
+        follow_redirects=True,
+    )
+
+    assert b"Select Feedback or Complaint" in response.data
+
+    with app.app_context():
+        assert MessFeedback.query.count() == 0
+
+
+def test_mess_feedback_rejects_empty_message(logged_in_client, app):
+    response = logged_in_client.post(
+        "/mess/feedback",
+        data={"category": "Complaint", "message": "   "},
+        follow_redirects=True,
+    )
+
+    assert b"Enter a message" in response.data
+
+    with app.app_context():
+        assert MessFeedback.query.count() == 0
+
+
+def test_student_only_sees_own_mess_records(logged_in_client, app):
+    with app.app_context():
+        other_student = Student(
+            full_name="Another Student",
+            email="another@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="other-proof.pdf",
+        )
+        db.session.add(other_student)
+        db.session.commit()
+
+        db.session.add(
+            MessFeedback(
+                student_id=other_student.id,
+                category="Complaint",
+                message="Private complaint",
+            )
+        )
+        db.session.commit()
+
+    response = logged_in_client.get("/mess/")
+    assert response.status_code == 200
+    assert b"Private complaint" not in response.data

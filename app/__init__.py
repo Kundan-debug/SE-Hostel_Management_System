@@ -80,6 +80,12 @@ def create_app(test_config=None):
         CommonFacility,
         FacilityBooking,
         Announcement,
+        MessMenu,
+        MealRegistration,
+        MessAttendance,
+        MessFeedback,
+        MessHoliday,
+        MessFee,
     )
 
     @login_manager.user_loader
@@ -355,5 +361,8 @@ def create_app(test_config=None):
 
     from app.announcement_routes import announcement_bp
     app.register_blueprint(announcement_bp)
+
+    from app.mess_routes import mess_bp
+    app.register_blueprint(mess_bp)
 
     return app

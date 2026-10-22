@@ -1,0 +1,256 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Mess | Hostel Management System</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f4f6fb;
+            color: #202938;
+        }
+        header {
+            background: #fff;
+            border-bottom: 1px solid #e5e9f2;
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        header h1 { margin: 0; font-size: 23px; color: #29345b; }
+        a { color: #4d55bd; }
+        .back {
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 14px;
+            border: 1px solid #e0e4ed;
+            border-radius: 9px;
+        }
+        main { max-width: 1150px; margin: 32px auto; padding: 0 22px; }
+        .intro { margin-bottom: 24px; }
+        .intro h2 { margin: 0 0 8px; font-size: 29px; }
+        .intro p { margin: 0; color: #697386; line-height: 1.6; }
+        .section {
+            background: #fff;
+            border: 1px solid #e5e9f2;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(25,40,80,.03);
+        }
+        .section h3 { margin: 0 0 16px; font-size: 19px; }
+        .muted { color: #697386; }
+        .empty {
+            background: #f7f8fc;
+            border-radius: 9px;
+            padding: 15px;
+            color: #697386;
+            line-height: 1.5;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .meal {
+            border: 1px solid #e5e9f2;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .meal h4 { margin: 0 0 7px; }
+        .meal p { margin: 6px 0; line-height: 1.5; overflow-wrap: anywhere; }
+        .tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #3944a0;
+            background: #eeedff;
+            border-radius: 20px;
+            padding: 5px 9px;
+            margin-bottom: 8px;
+        }
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 13px;
+            background: #4d55bd;
+            color: white;
+            font-weight: 650;
+            cursor: pointer;
+        }
+        button:disabled { background: #dfe2ec; color: #50586a; cursor: default; }
+        .feedback-form {
+            display: grid;
+            gap: 12px;
+            max-width: 650px;
+        }
+        label { font-size: 14px; font-weight: 650; }
+        select, textarea {
+            width: 100%;
+            border: 1px solid #d9deea;
+            border-radius: 8px;
+            padding: 11px;
+            font: inherit;
+            background: #fff;
+        }
+        textarea { min-height: 105px; resize: vertical; }
+        .notice {
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            background: #eef2ff;
+            color: #303b87;
+        }
+        .notice.success { background: #e5f8ee; color: #17653b; }
+        .notice.error { background: #fff0ed; color: #9b3025; }
+        .notice.info { background: #eef2ff; color: #303b87; }
+        .entry {
+            padding: 13px 0;
+            border-bottom: 1px solid #edf0f6;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+        .entry:last-child { border-bottom: 0; }
+        .entry strong { display: inline-block; margin-bottom: 3px; }
+        footer { text-align: center; padding: 10px 20px 26px; color: #8a93a3; font-size: 13px; }
+        @media (max-width: 650px) {
+            header { padding: 18px 20px; }
+            main { margin-top: 24px; padding: 0 15px; }
+            .grid { grid-template-columns: 1fr; }
+            .section { padding: 17px; }
+            .intro h2 { font-size: 25px; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🍽️ Manage Mess</h1>
+    <a class="back" href="{{ url_for('home') }}">← Back to Dashboard</a>
+</header>
+
+<main>
+    <section class="intro">
+        <h2>Your Mess Information</h2>
+        <p>View the weekly menu, register for meals, and check your mess records.</p>
+    </section>
+
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="notice {{ category }}">{{ message }}</div>
+    {% endfor %}
+
+    <section class="section">
+        <h3>Weekly Menu &amp; Meal Schedule</h3>
+        {% if menus %}
+            {% for day in weekdays %}
+                {% set day_menus = menus | selectattr('day_of_week', 'equalto', day) | list %}
+                {% if day_menus %}
+                    <h4>{{ day }}</h4>
+                    <div class="grid">
+                        {% for meal in day_menus %}
+                            <article class="meal">
+                                <span class="tag">{{ meal.meal_type }}</span>
+                                <p><strong>Menu:</strong> {{ meal.menu_items }}</p>
+                                <p class="muted">
+                                    {{ meal.start_time.strftime('%I:%M %p') }}
+                                    – {{ meal.end_time.strftime('%I:%M %p') }}
+                                </p>
+                                {% if meal.id in registered_menu_ids %}
+                                    <button type="button" disabled>Registered</button>
+                                {% else %}
+                                    <form method="POST" action="{{ url_for('mess.register_meal') }}">
+                                        <input type="hidden" name="menu_id" value="{{ meal.id }}">
+                                        <button type="submit">Register for Meal</button>
+                                    </form>
+                                {% endif %}
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="empty">The weekly menu and meal schedule are currently unavailable. Please check again later.</div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <h3>Mess Attendance</h3>
+        {% if attendance %}
+            {% for item in attendance %}
+                <div class="entry">
+                    <strong>{{ item.attendance_date.strftime('%d %b %Y') }} · {{ item.meal_type }}</strong><br>
+                    Attendance: {{ item.status }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">Your mess attendance records are not available yet.</div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <h3>Feedback &amp; Complaints</h3>
+        <form class="feedback-form" method="POST" action="{{ url_for('mess.submit_feedback') }}">
+            <label for="category">Submission type</label>
+            <select id="category" name="category" required>
+                <option value="Feedback">Feedback</option>
+                <option value="Complaint">Complaint</option>
+            </select>
+            <label for="message">Your message</label>
+            <textarea id="message" name="message" maxlength="1000"
+                      placeholder="Share your feedback or describe your complaint..." required></textarea>
+            <button type="submit">Submit</button>
+        </form>
+
+        <h4>Your previous submissions</h4>
+        {% if feedback_items %}
+            {% for item in feedback_items %}
+                <div class="entry">
+                    <strong>{{ item.category }} · {{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}</strong><br>
+                    {{ item.message }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">You have not submitted any feedback or complaints yet.</div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <h3>Mess Holidays</h3>
+        {% if holidays %}
+            {% for holiday in holidays %}
+                <div class="entry">
+                    <strong>{{ holiday.title }}</strong><br>
+                    {{ holiday.holiday_date.strftime('%d %b %Y') }}
+                    {% if holiday.description %}<p class="muted">{{ holiday.description }}</p>{% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">No upcoming mess holidays have been announced.</div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <h3>Mess Fee Information</h3>
+        {% if fees %}
+            {% for fee in fees %}
+                <div class="entry">
+                    <strong>{{ fee.billing_month }}</strong><br>
+                    Amount: ₹{{ "%.2f"|format(fee.amount) }}<br>
+                    Due date: {{ fee.due_date.strftime('%d %b %Y') }}<br>
+                    Status: {{ fee.status }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">Your mess fee information is currently unavailable.</div>
+        {% endif %}
+    </section>
+</main>
+
+<footer>Hostel Management System · Manage Mess</footer>
+</body>
+</html>
