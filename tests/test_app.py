@@ -1,5 +1,6 @@
 
 import pytest
+from io import BytesIO
 from datetime import date, timedelta, time
 from decimal import Decimal
 
@@ -68,14 +69,17 @@ def logged_in_client(client):
 
 # Home and authentication tests
 
-def test_home_endpoint(client):
-    response = client.get("/")
+
+def test_home_endpoint(logged_in_client):
+    response = logged_in_client.get("/")
 
     assert response.status_code == 200
-    assert response.get_json() == {
-        "message": "Hostel Management System API",
-        "status": "running",
-    }
+    assert b"Hostel Management System" in response.data
+    assert b"Student Profile" in response.data
+    assert b"Room Details" in response.data
+    assert b"Fees and Payments" in response.data
+    assert b"Leave Applications" in response.data
+    assert b"Common Facilities" in response.data
 
 
 def test_login_page_loads(client):
@@ -860,3 +864,135 @@ def test_student_cannot_cancel_booking_twice(
         f"/facilities/bookings/{booking_id}/cancel"
     )
     assert second_response.status_code == 409
+
+def test_profile_requires_login(client):
+    response = client.get("/profile/")
+
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_student_can_view_own_profile(logged_in_client):
+    response = logged_in_client.get("/profile/")
+
+    assert response.status_code == 200
+    assert b"Test Student" in response.data
+    assert b"student@gmail.com" in response.data
+    assert b"Test Hostel" in response.data
+
+
+def test_student_can_update_own_profile(logged_in_client, app):
+    response = logged_in_client.post(
+        "/profile/edit",
+        data={
+            "full_name": "Updated Student",
+            "email": "updated@gmail.com",
+            "contact_number": "9123456789",
+            "parent_name": "Updated Parent",
+            "parent_contact_number": "9123456788",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Your profile has been updated." in response.data
+
+    with app.app_context():
+        student = Student.query.filter_by(srn="TEST123").first()
+        assert student.full_name == "Updated Student"
+        assert student.email == "updated@gmail.com"
+
+
+def test_profile_rejects_invalid_contact_number(logged_in_client, app):
+    response = logged_in_client.post(
+        "/profile/edit",
+        data={
+            "full_name": "Test Student",
+            "email": "student@gmail.com",
+            "contact_number": "123",
+            "parent_name": "Test Parent",
+            "parent_contact_number": "9876543211",
+        },
+    )
+
+    assert response.status_code == 400
+    assert b"Enter exactly 10 digits." in response.data
+
+    with app.app_context():
+        student = Student.query.filter_by(srn="TEST123").first()
+        assert student.contact_number == "9876543210"
+
+
+def test_profile_rejects_duplicate_email(logged_in_client, app):
+    with app.app_context():
+        other_student = Student(
+            full_name="Other Student",
+            email="other@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Other Hostel",
+            room_number="202",
+            id_proof_filename="other.pdf",
+        )
+        db.session.add(other_student)
+        db.session.commit()
+
+    response = logged_in_client.post(
+        "/profile/edit",
+        data={
+            "full_name": "Test Student",
+            "email": "other@gmail.com",
+            "contact_number": "9876543210",
+            "parent_name": "Test Parent",
+            "parent_contact_number": "9876543211",
+        },
+    )
+
+    assert response.status_code == 400
+    assert b"This email is already registered." in response.data
+
+
+def test_profile_photo_rejects_unsupported_extension(logged_in_client):
+    response = logged_in_client.post(
+        "/profile/photo",
+        data={
+            "profile_photo": (
+                BytesIO(b"not an image"),
+                "photo.gif",
+            )
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Upload a JPG, JPEG, or PNG image." in response.data
+
+
+def test_student_can_upload_profile_photo(logged_in_client, app):
+    response = logged_in_client.post(
+        "/profile/photo",
+        data={
+            "profile_photo": (
+                BytesIO(b"test image content"),
+                "photo.jpg",
+            )
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Profile photo updated." in response.data
+
+    from pathlib import Path
+
+    with app.app_context():
+        upload_folder = Path(app.config["UPLOAD_FOLDER"])
+        photos = list(upload_folder.glob("profile_1_*.jpg"))
+
+        assert len(photos) == 1
+        assert photos[0].read_bytes() == b"test image content"

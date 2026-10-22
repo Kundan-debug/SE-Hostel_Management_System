@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | Hostel Management System</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f3f5f9;
+            color: #243047;
+        }
+
+        header {
+            background: #243b64;
+            color: white;
+            padding: 24px 7%;
+        }
+
+        header h1 { margin: 0; font-size: 26px; }
+        header p { color: #dbeafe; margin-bottom: 0; }
+
+        main {
+            width: min(1000px, 92%);
+            margin: 40px auto;
+        }
+
+        .welcome {
+            background: white;
+            padding: 32px;
+            border-radius: 14px;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, .06);
+        }
+
+        .welcome h2 { margin-top: 0; font-size: 26px; }
+        .welcome p { color: #64748b; line-height: 1.6; }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .card h3 { margin-top: 0; }
+        .card p { color: #64748b; font-size: 14px; line-height: 1.5; }
+
+        a.button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 11px 16px;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a.button:hover { background: #1d4ed8; }
+
+        .logout { margin-top: 28px; }
+
+        .logout button {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 16px;
+            background: white;
+            color: #243047;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .welcome { padding: 22px; }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>Hostel Management System</h1>
+    <p>Your student dashboard</p>
+</header>
+
+<main>
+    <section class="welcome">
+        <h2>Welcome, {{ current_user.full_name }}!</h2>
+        <p>
+            Manage your student profile and access your hostel services
+            from one place.
+        </p>
+    </section>
+
+    <section class="cards">
+        <article class="card">
+            <h3>Student Profile</h3>
+            <p>View and update your personal details and profile photo.</p>
+            <a class="button" href="{{ url_for('profile.view_profile') }}">
+                My Profile
+            </a>
+        </article>
+
+        <article class="card">
+            <h3>Room Details</h3>
+            <p>View your allocated hostel room information.</p>
+            <a class="button" href="{{ url_for('room.room_details') }}">
+                View Room
+            </a>
+        </article>
+
+        <article class="card">
+            <h3>Fees and Payments</h3>
+            <p>Check your fee details and payment information.</p>
+            <a class="button" href="{{ url_for('fees.manage_fees') }}">
+                View Fees
+            </a>
+        </article>
+
+        <article class="card">
+            <h3>Leave Applications</h3>
+            <p>Apply for leave and view your leave requests.</p>
+            <a class="button" href="{{ url_for('leave.apply_leave') }}">
+                Manage Leave
+            </a>
+        </article>
+
+        <article class="card">
+            <h3>Common Facilities</h3>
+            <p>Explore available facilities and manage bookings.</p>
+            <a class="button" href="{{ url_for('facility.facility_booking_page') }}">
+                View Facilities
+            </a>
+        </article>
+    </section>
+
+    <form class="logout" action="{{ url_for('logout') }}" method="post">
+        <button type="submit">Log Out</button>
+    </form>
+</main>
+</body>
+</html>
