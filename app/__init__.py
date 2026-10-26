@@ -77,6 +77,7 @@ def create_app(test_config=None):
         Payment,
         LeaveApplication,
         Room,
+        Complaint,
         CommonFacility,
         FacilityBooking,
         Announcement,
@@ -355,6 +356,9 @@ def create_app(test_config=None):
 
     from app.facility_routes import facility_bp
     app.register_blueprint(facility_bp)
+
+    from app.complaint_routes import complaint_bp
+    app.register_blueprint(complaint_bp)
 
     from app.profile_routes import profile_bp
     app.register_blueprint(profile_bp)

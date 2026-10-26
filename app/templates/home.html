@@ -246,6 +246,12 @@
                 <p>View the latest hostel notices, events, and important updates.</p>
             </a>
 
+            <a href="{{ url_for('complaint.submit_complaint') }}" class="card">
+                <div class="card-icon orange">🛠️</div>
+                <h3>Complaints</h3>
+                <p>Report hostel issues, attach supporting files, and track complaint status.</p>
+            </a>
+
             <a href="{{ url_for('mess.manage_mess') }}" class="card">
                 <div class="card-icon green">🍽️</div>
                 <h3>Manage Mess</h3>
