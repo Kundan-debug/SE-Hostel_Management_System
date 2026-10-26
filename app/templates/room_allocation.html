@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Availability | Hostel Management</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 16px;
+            font-family: Arial, sans-serif;
+            background: #f3f6fb;
+            color: #1f2937;
+        }
+
+        .container { max-width: 1000px; margin: auto; }
+
+        h1 { margin-bottom: 8px; }
+        .subtitle { color: #64748b; margin-bottom: 28px; }
+
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+        }
+
+        .current { display: flex; gap: 32px; flex-wrap: wrap; }
+        .current div span { display: block; color: #64748b; font-size: 13px; margin-bottom: 4px; }
+        .current div strong { font-size: 18px; }
+
+        select, button, .back-link {
+            font: inherit;
+            border-radius: 8px;
+        }
+
+        select { padding: 10px 12px; border: 1px solid #cbd5e1; background: white; }
+
+        button, .back-link {
+            display: inline-block;
+            border: 0;
+            padding: 10px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .primary { background: #2563eb; color: white; }
+        .secondary { background: #e2e8f0; color: #1e293b; }
+        .back-link { background: #e2e8f0; color: #1e293b; }
+
+        .filter { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+
+        .flash {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .flash.error { background: #fee2e2; color: #991b1b; }
+        .flash.success { background: #dcfce7; color: #166534; }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+
+        th, td {
+            padding: 13px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        th { color: #475569; font-size: 13px; }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge.vacant { background: #dcfce7; color: #166534; }
+        .badge.full { background: #fee2e2; color: #991b1b; }
+        .badge.maintenance { background: #fef3c7; color: #92400e; }
+        .badge.current { background: #dbeafe; color: #1e40af; }
+
+        .empty { color: #64748b; padding: 18px 0; }
+        .actions { margin-top: 8px; }
+    </style>
+</head>
+<body>
+<main class="container">
+    <h1>Room Availability</h1>
+    <p class="subtitle">
+        Browse rooms and bed availability. Room allocation and changes are
+        handled by the hostel administration.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="panel">
+        <h2>Your Current Room</h2>
+        <div class="current">
+            <div><span>Hostel</span><strong>{{ student.hostel_name }}</strong></div>
+            <div><span>Room</span><strong>{{ student.room_number }}</strong></div>
+            <div>
+                <span>Beds available</span>
+                <strong>
+                    {% if current_room %}{{ current_room.available_beds }}{% else %}Not recorded{% endif %}
+                </strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>All Rooms</h2>
+
+        <form class="filter" method="GET" action="{{ url_for('room.room_allocation') }}">
+            <label for="hostel">Hostel</label>
+            <select id="hostel" name="hostel">
+                <option value="">All hostels</option>
+                {% for name in hostels %}
+                    <option value="{{ name }}" {% if hostel_filter == name %}selected{% endif %}>
+                        {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button class="secondary" type="submit">Apply</button>
+        </form>
+
+        {% if rows %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Hostel</th>
+                        <th>Room</th>
+                        <th>Capacity</th>
+                        <th>Beds available</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <td>{{ row.room.hostel_name }}</td>
+                            <td>{{ row.room.room_number }}</td>
+                            <td>{{ row.room.capacity }}</td>
+                            <td>{{ row.room.available_beds }}</td>
+                            <td>
+                                {% if row.state == 'current' %}
+                                    <span class="badge current">Your room</span>
+                                {% elif row.state == 'maintenance' %}
+                                    <span class="badge maintenance">Under maintenance</span>
+                                {% elif row.state == 'full' %}
+                                    <span class="badge full">Full</span>
+                                {% else %}
+                                    <span class="badge vacant">Vacant</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No rooms have been recorded yet.</p>
+        {% endif %}
+
+        <div class="actions">
+            <a class="back-link" href="{{ url_for('room.room_details') }}">&larr; Back to Room Details</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

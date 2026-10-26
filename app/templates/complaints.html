@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaints | Hostel Management</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 16px;
+            font-family: Arial, sans-serif;
+            background: #f3f6fb;
+            color: #1f2937;
+        }
+
+        .container { max-width: 1000px; margin: auto; }
+
+        h1 { margin-bottom: 8px; }
+        .subtitle { color: #64748b; margin-bottom: 28px; }
+
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 7px; }
+        .full { grid-column: 1 / -1; }
+
+        label { font-weight: 600; font-size: 14px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font: inherit;
+            background: white;
+        }
+
+        textarea { min-height: 120px; resize: vertical; }
+
+        .hint { color: #64748b; font-size: 12px; }
+
+        button, .back-link, .link-button {
+            display: inline-block;
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 16px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .primary { background: #2563eb; color: white; }
+        .back-link { background: #e2e8f0; color: #1e293b; }
+        .link-button { background: #eff6ff; color: #1d4ed8; padding: 6px 10px; font-size: 13px; }
+
+        .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .flash {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .flash.error { background: #fee2e2; color: #991b1b; }
+        .flash.success { background: #dcfce7; color: #166534; }
+
+        .filter { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+        .filter select { width: auto; }
+        .filter button { padding: 9px 14px; background: #e2e8f0; color: #1e293b; }
+
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th, td {
+            padding: 13px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th { color: #475569; font-size: 13px; }
+        td.description { max-width: 320px; overflow-wrap: anywhere; }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status.open { background: #fef3c7; color: #92400e; }
+        .status.in-progress { background: #dbeafe; color: #1e40af; }
+        .status.resolved { background: #dcfce7; color: #166534; }
+
+        .priority.low { background: #e2e8f0; color: #334155; }
+        .priority.medium { background: #ffedd5; color: #9a3412; }
+        .priority.high { background: #fee2e2; color: #991b1b; }
+
+        .empty { color: #64748b; padding: 18px 0; }
+
+        @media (max-width: 650px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full { grid-column: auto; }
+            body { padding: 20px 12px; }
+            .panel { padding: 17px; }
+        }
+    </style>
+</head>
+<body>
+<main class="container">
+    <h1>Complaints</h1>
+    <p class="subtitle">Report a hostel issue and track its status.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="panel">
+        <h2>Submit a Complaint</h2>
+
+        <form method="POST" action="{{ url_for('complaint.submit_complaint') }}"
+              enctype="multipart/form-data">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select category</option>
+                        {% for item in categories %}
+                            <option value="{{ item }}"
+                                {% if form_data.get('category') == item %}selected{% endif %}>
+                                {{ item }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="priority">Priority</label>
+                    <select id="priority" name="priority" required>
+                        <option value="">Select priority</option>
+                        {% for item in priorities %}
+                            <option value="{{ item }}"
+                                {% if form_data.get('priority') == item %}selected{% endif %}>
+                                {{ item }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field full">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description"
+                              maxlength="{{ max_description }}"
+                              placeholder="Describe the issue, where it is, and since when..."
+                              required>{{ form_data.get('description', '') }}</textarea>
+                </div>
+
+                <div class="field full">
+                    <label for="attachment">Attachment (optional)</label>
+                    <input id="attachment" name="attachment" type="file"
+                           accept=".pdf,.jpg,.jpeg,.png">
+                    <span class="hint">PDF, JPG, JPEG or PNG, up to 5 MB.</span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="primary" type="submit">Submit Complaint</button>
+                <a class="back-link" href="{{ url_for('home') }}">Back</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>My Complaints</h2>
+
+        <form class="filter" method="GET" action="{{ url_for('complaint.submit_complaint') }}">
+            <label for="status-filter">Filter by status</label>
+            <select id="status-filter" name="status">
+                <option value="">All</option>
+                {% for item in statuses %}
+                    <option value="{{ item }}"
+                        {% if status_filter == item %}selected{% endif %}>
+                        {{ item }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit">Apply</button>
+        </form>
+
+        {% if complaints %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Submitted</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Attachment</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in complaints %}
+                        <tr>
+                            <td>{{ item.created_at.strftime('%d %b %Y') }}</td>
+                            <td>{{ item.category }}</td>
+                            <td class="description">{{ item.description }}</td>
+                            <td>
+                                <span class="badge priority {{ item.priority|lower }}">
+                                    {{ item.priority }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge status {{ item.status|lower|replace(' ', '-') }}">
+                                    {{ item.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.attachment_filename %}
+                                    <a class="link-button"
+                                       href="{{ url_for('complaint.download_attachment', complaint_id=item.id) }}">
+                                        Download
+                                    </a>
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">
+                {% if status_filter %}
+                    No complaints with status "{{ status_filter }}".
+                {% else %}
+                    You have not submitted any complaints yet.
+                {% endif %}
+            </p>
+        {% endif %}
+    </section>
+</main>
+</body>
+</html>

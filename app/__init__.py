@@ -77,6 +77,7 @@ def create_app(test_config=None):
         Payment,
         LeaveApplication,
         Room,
+        Complaint,
         CommonFacility,
         FacilityBooking,
         Announcement,
@@ -86,10 +87,20 @@ def create_app(test_config=None):
         MessFeedback,
         MessHoliday,
         MessFee,
+        Warden,
     )
 
     @login_manager.user_loader
     def load_user(user_id):
+        if not user_id:
+            return None
+        if user_id.startswith("warden:"):
+            try:
+                return db.session.get(Warden, int(user_id.split(":", 1)[1]))
+            except (TypeError, ValueError):
+                return None
+        if user_id.startswith("student:"):
+            user_id = user_id.split(":", 1)[1]
         try:
             return db.session.get(Student, int(user_id))
         except (TypeError, ValueError):
@@ -298,6 +309,8 @@ def create_app(test_config=None):
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if current_user.is_authenticated:
+            if getattr(current_user, "is_warden", False):
+                return redirect(url_for("warden.dashboard"))
             return redirect(url_for("room.room_details"))
 
         if request.method == "GET":
@@ -313,13 +326,22 @@ def create_app(test_config=None):
                 email=email,
             ), 400
 
-        student = Student.query.filter_by(email=email).first()
+        warden = Warden.query.filter_by(email=email).first()
+        if warden is not None:
+            if not check_password_hash(warden.password_hash, password):
+                return render_template(
+                    "login.html",
+                    error="Invalid email or password.",
+                    email=email,
+                ), 401
+            login_user(warden)
+            flash("Login successful!", "success")
+            return redirect(url_for("warden.dashboard"))
 
+        student = Student.query.filter_by(email=email).first()
         if (
             student is None
-            or not check_password_hash(
-                student.password_hash, password
-            )
+            or not check_password_hash(student.password_hash, password)
         ):
             return render_template(
                 "login.html",
@@ -356,6 +378,9 @@ def create_app(test_config=None):
     from app.facility_routes import facility_bp
     app.register_blueprint(facility_bp)
 
+    from app.complaint_routes import complaint_bp
+    app.register_blueprint(complaint_bp)
+
     from app.profile_routes import profile_bp
     app.register_blueprint(profile_bp)
 
@@ -364,5 +389,8 @@ def create_app(test_config=None):
 
     from app.mess_routes import mess_bp
     app.register_blueprint(mess_bp)
+
+    from app.warden_routes import warden_bp
+    app.register_blueprint(warden_bp)
 
     return app

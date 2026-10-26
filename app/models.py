@@ -212,6 +212,73 @@ class Room(db.Model):
         return self.capacity - self.occupied_beds
 
 
+COMPLAINT_CATEGORIES = (
+    "Room Maintenance",
+    "Electrical",
+    "Plumbing",
+    "Cleanliness",
+    "Internet / Wi-Fi",
+    "Security",
+    "Other",
+)
+COMPLAINT_PRIORITIES = ("Low", "Medium", "High")
+COMPLAINT_STATUSES = ("Open", "In Progress", "Resolved")
+
+
+def _sql_list(values):
+    return ", ".join(f"'{value}'" for value in values)
+
+
+class Complaint(db.Model):
+    __tablename__ = "complaints"
+    __table_args__ = (
+        CheckConstraint(
+            f"category IN ({_sql_list(COMPLAINT_CATEGORIES)})",
+            name="ck_complaint_category",
+        ),
+        CheckConstraint(
+            f"priority IN ({_sql_list(COMPLAINT_PRIORITIES)})",
+            name="ck_complaint_priority",
+        ),
+        CheckConstraint(
+            f"status IN ({_sql_list(COMPLAINT_STATUSES)})",
+            name="ck_complaint_status",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    category = db.Column(db.String(30), nullable=False)
+    description = db.Column(db.String(1000), nullable=False)
+    priority = db.Column(db.String(10), nullable=False, default="Medium")
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="Open",
+        index=True,
+    )
+    attachment_filename = db.Column(db.String(255), nullable=True)
+    attachment_name = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    student = db.relationship("Student", backref="complaints")
+
+
 class CommonFacility(db.Model):
     __tablename__ = "common_facilities"
     __table_args__ = (
@@ -465,3 +532,20 @@ class MessFee(db.Model):
     status = db.Column(db.String(10), nullable=False, default="Due")
 
     student = db.relationship("Student", backref="mess_fees")
+
+
+class Warden(UserMixin, db.Model):
+    """A separate authentication identity for hostel wardens."""
+    __tablename__ = "wardens"
+
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(254), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+
+    @property
+    def is_warden(self):
+        return True
+
+    def get_id(self):
+        return f"warden:{self.id}"
