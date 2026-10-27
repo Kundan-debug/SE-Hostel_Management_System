@@ -1,9 +1,9 @@
-from flask import abort, Blueprint, flash, redirect, render_template, request, url_for
-
 from datetime import datetime, timezone
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+
+from flask import abort, Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from sqlalchemy import or_
+
 from app import db
 from app.models import Announcement
 from app.warden_routes import warden_required
@@ -84,7 +84,7 @@ def edit_announcement(announcement_id):
 def delete_announcement(announcement_id):
     item = db.session.get(Announcement, announcement_id)
     if item is None:
-        bort(404)
+        abort(404)
     db.session.delete(item)
     db.session.commit()
     flash("Announcement deleted.", "success")
