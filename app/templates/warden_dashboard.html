@@ -1,7 +1,98 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Warden Dashboard</title>
-<style>body{font:16px Arial;background:#f3f6fb;color:#172033;margin:0;padding:32px}.wrap{max-width:1000px;margin:auto}nav{display:flex;gap:12px;flex-wrap:wrap}a{background:#1d4ed8;color:white;padding:12px 16px;border-radius:8px;text-decoration:none}.stats{display:flex;gap:14px;flex-wrap:wrap}.stat{background:white;padding:20px;border-radius:12px;min-width:150px;margin:18px 0}</style></head>
-<body><main class="wrap"><h1>Warden Dashboard</h1><p>Manage rooms, student allocations, transfers, and complaints across all hostels.</p>
-<div class="stats"><div class="stat"><b>{{ room_count }}</b><br>Rooms</div><div class="stat"><b>{{ student_count }}</b><br>Students</div><div class="stat"><b>{{ open_complaints }}</b><br>Unresolved complaints</div></div>
-<nav><a href="{{ url_for('warden.rooms') }}">Manage Rooms</a><a href="{{ url_for('warden.allocations') }}">Allocate / Transfer Rooms</a><a href="{{ url_for('warden.complaints') }}">Manage Complaints</a></nav>
-<form method="post" action="{{ url_for('logout') }}" style="margin-top:24px"><button>Log out</button></form></main></body></html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Dashboard</title>
+
+    <style>
+        body {
+            font: 16px Arial, sans-serif;
+            background: #f3f6fb;
+            color: #172033;
+            margin: 0;
+            padding: 32px;
+        }
+
+        .wrap {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        nav {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        a {
+            background: #1d4ed8;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        .stats {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            min-width: 150px;
+            margin: 18px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="wrap">
+        <h1>Warden Dashboard</h1>
+
+        <p>
+            Manage rooms, student allocations, transfers, and complaints
+            across all hostels.
+        </p>
+
+        <div class="stats">
+            <div class="stat">
+                <b>{{ room_count }}</b><br>
+                Rooms
+            </div>
+
+            <div class="stat">
+                <b>{{ student_count }}</b><br>
+                Students
+            </div>
+
+            <div class="stat">
+                <b>{{ open_complaints }}</b><br>
+                Unresolved complaints
+            </div>
+        </div>
+
+        <nav>
+            <a href="{{ url_for('warden.rooms') }}">Manage Rooms</a>
+            <a href="{{ url_for('warden.allocations') }}">
+                Allocate / Transfer Rooms
+            </a>
+            <a href="{{ url_for('warden.complaints') }}">
+                Manage Complaints
+            </a>
+        </nav>
+
+        <form
+            method="post"
+            action="{{ url_for('logout') }}"
+            style="margin-top: 24px"
+        >
+            <button>Log out</button>
+        </form>
+    </main>
+</body>
+</html>
