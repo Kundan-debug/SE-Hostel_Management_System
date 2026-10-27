@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Student Profile</title>
+<style>*{box-sizing:border-box}body{font:15px Arial;background:#f3f6fb;color:#172033;margin:0}header{background:white;padding:20px 6%;border-bottom:1px solid #e5e9f2}main{max-width:800px;margin:32px auto;padding:0 20px}.panel{background:white;padding:24px;border:1px solid #e5e9f2;border-radius:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.field{padding:12px;background:#f8f9fc;border-radius:8px}.label{font-size:12px;color:#667085;margin-bottom:6px}.value{font-weight:600;overflow-wrap:anywhere}a{color:#1d4ed8;text-decoration:none}@media(max-width:600px){.grid{grid-template-columns:1fr}}</style></head><body><header><a href="{{ url_for('student_directory.list_students') }}">← Back to Student Profiles</a></header><main><h1>{{ student.full_name }}</h1><section class="panel"><div class="grid">
+<div class="field"><div class="label">Student name</div><div class="value">{{ student.full_name }}</div></div>
+<div class="field"><div class="label">SRN</div><div class="value">{{ student.srn }}</div></div>
+<div class="field"><div class="label">Email</div><div class="value">{{ student.email }}</div></div>
+<div class="field"><div class="label">Contact number</div><div class="value">{{ student.contact_number }}</div></div>
+<div class="field"><div class="label">Parent / guardian</div><div class="value">{{ student.parent_name }}</div></div>
+<div class="field"><div class="label">Parent / guardian contact</div><div class="value">{{ student.parent_contact_number }}</div></div>
+<div class="field"><div class="label">Hostel</div><div class="value">{{ student.hostel_name }}</div></div>
+<div class="field"><div class="label">Room</div><div class="value">{{ student.room_number }}</div></div>
+</div></section></main></body></html>
