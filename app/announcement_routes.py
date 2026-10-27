@@ -1,3 +1,5 @@
+from flask import abort, Blueprint, flash, redirect, render_template, request, url_for
+
 from datetime import datetime, timezone
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
@@ -52,7 +54,9 @@ def manage_announcements():
 @announcement_bp.route("/<int:announcement_id>/edit", methods=["POST"])
 @warden_required
 def edit_announcement(announcement_id):
-    item = Announcement.query.get_or_404(announcement_id)
+    item = db.session.get(Announcement, announcement_id)
+    if item is None:
+        abort(404)
     title = request.form.get("title", "").strip()
     message = request.form.get("message", "").strip()
     category = request.form.get("category", "General").strip() or "General"
@@ -64,6 +68,9 @@ def edit_announcement(announcement_id):
     if expiry:
         try:
             expires_at = datetime.strptime(expiry, "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc)
+            if expires_at <= datetime.now(timezone.utc):
+                flash("Expiry must be in the future.", "error")
+                return redirect(url_for("announcement.manage_announcements"))
         except ValueError:
             flash("Enter a valid expiry date and time.", "error")
             return redirect(url_for("announcement.manage_announcements"))
@@ -75,7 +82,9 @@ def edit_announcement(announcement_id):
 @announcement_bp.route("/<int:announcement_id>/delete", methods=["POST"])
 @warden_required
 def delete_announcement(announcement_id):
-    item = Announcement.query.get_or_404(announcement_id)
+    item = db.session.get(Announcement, announcement_id)
+    if item is None:
+        bort(404)
     db.session.delete(item)
     db.session.commit()
     flash("Announcement deleted.", "success")
