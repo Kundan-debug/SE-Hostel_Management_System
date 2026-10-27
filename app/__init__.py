@@ -1,4 +1,3 @@
-
 import os
 import re
 from pathlib import Path
@@ -112,6 +111,9 @@ def create_app(test_config=None):
 
     from app.laundry_routes import laundry_bp
     app.register_blueprint(laundry_bp)
+
+    from app.student_directory_routes import student_directory_bp
+    app.register_blueprint(student_directory_bp)
 
     @app.route("/")
     @login_required
