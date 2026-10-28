@@ -1,11 +1,14 @@
 """Warden-only room and complaint management."""
 from functools import wraps
 
+from datetime import date
+from decimal import Decimal, InvalidOperation
+
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Room, Complaint, Student, COMPLAINT_PRIORITIES, COMPLAINT_STATUSES
+from app.models import Room, Complaint, Student, Fee, Payment, COMPLAINT_PRIORITIES, COMPLAINT_STATUSES
 
 warden_bp = Blueprint("warden", __name__, url_prefix="/warden")
 
@@ -143,3 +146,54 @@ def complaints():
     items = Complaint.query.order_by(Complaint.created_at.desc()).all()
     return render_template("warden_complaints.html", complaints=items,
                            statuses=COMPLAINT_STATUSES, priorities=COMPLAINT_PRIORITIES)
+
+
+@warden_bp.route("/fees", methods=["GET", "POST"])
+@warden_required
+def manage_fee_records():
+    if request.method == "POST":
+        try:
+            student_id = int(request.form.get("student_id", ""))
+            amount = Decimal(request.form.get("amount", ""))
+            due_date = date.fromisoformat(request.form.get("due_date", ""))
+        except (ValueError, InvalidOperation):
+            flash("Enter a valid student, amount, and due date.", "error")
+            return redirect(url_for("warden.manage_fee_records"))
+
+        student = db.session.get(Student, student_id)
+        description = request.form.get("description", "").strip()
+        fee_type = request.form.get("fee_type", "").strip()
+
+        if student is None or not description or not fee_type or not amount.is_finite() or amount <= 0:
+            flash("Enter valid fee details and select a student.", "error")
+        else:
+            fee = Fee(
+                student_id=student.id,
+                description=description,
+                fee_type=fee_type,
+                amount=amount,
+                due_date=due_date,
+            )
+            db.session.add(fee)
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                current_app.logger.exception("Creating fee record failed")
+                flash("Fee record could not be created.", "error")
+            else:
+                flash("Fee record created successfully.", "success")
+                return redirect(url_for("warden.manage_fee_records"))
+
+    students = Student.query.order_by(Student.full_name).all()
+    fees = Fee.query.order_by(Fee.due_date.asc()).all()
+    return render_template("warden_fees.html", students=students, fees=fees)
+
+
+@warden_bp.route("/fees/receipts/<int:payment_id>")
+@warden_required
+def fee_receipt(payment_id):
+    payment = db.session.get(Payment, payment_id)
+    if payment is None or payment.status != "Success":
+        abort(404)
+    return render_template("receipt.html", payment=payment)

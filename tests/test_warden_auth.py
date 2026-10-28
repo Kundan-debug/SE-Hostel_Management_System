@@ -1,3 +1,5 @@
+from decimal import Decimal
+from decimal import Decimal
 import pytest
 from werkzeug.security import generate_password_hash
 from app import db
@@ -37,3 +39,133 @@ def test_warden_wrong_password_rejected(client, warden):
 def test_warden_table_is_registered_in_metadata(app):
     assert "wardens" in db.metadata.tables
     assert db.metadata.tables["wardens"] is Warden.__table__
+
+
+def test_warden_can_view_all_fee_records(client, app, warden):
+    from datetime import date
+    from decimal import Decimal
+    from app.models import Fee, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        db.session.add(Fee(
+            student_id=student.id,
+            description="Hostel Fee",
+            fee_type="Hostel",
+            amount=Decimal("5000.00"),
+            due_date=date(2026, 11, 1),
+        ))
+        db.session.commit()
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+    response = client.get("/warden/fees")
+    assert response.status_code == 200
+    assert b"Hostel Fee" in response.data
+    assert b"Test Student" in response.data
+
+
+def test_warden_can_create_fee_record(client, app, warden):
+    from app.models import Fee, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        student_id = student.id
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+    response = client.post("/warden/fees", data={
+        "student_id": student_id,
+        "description": "Library Fee",
+        "fee_type": "Library",
+        "amount": "500.00",
+        "due_date": "2026-11-15",
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Library Fee" in response.data
+
+    with app.app_context():
+        fee = Fee.query.filter_by(description="Library Fee").one()
+        assert fee.status == "Due"
+        assert fee.amount == Decimal("500.00")
+
+
+def test_student_cannot_access_warden_fee_records(logged_in_client):
+    response = logged_in_client.get("/warden/fees")
+    assert response.status_code == 403
+
+
+def test_unauthenticated_user_cannot_access_warden_fee_records(client):
+    response = client.get("/warden/fees")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_warden_can_view_all_fee_records(client, app, warden):
+    from datetime import date
+    from decimal import Decimal
+    from app.models import Fee, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        db.session.add(Fee(
+            student_id=student.id,
+            description="Hostel Fee",
+            fee_type="Hostel",
+            amount=Decimal("5000.00"),
+            due_date=date(2026, 11, 1),
+        ))
+        db.session.commit()
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+    response = client.get("/warden/fees")
+    assert response.status_code == 200
+    assert b"Hostel Fee" in response.data
+    assert b"Test Student" in response.data
+
+
+def test_warden_can_create_fee_record(client, app, warden):
+    from app.models import Fee, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        student_id = student.id
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+    response = client.post("/warden/fees", data={
+        "student_id": student_id,
+        "description": "Library Fee",
+        "fee_type": "Library",
+        "amount": "500.00",
+        "due_date": "2026-11-15",
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Library Fee" in response.data
+
+    with app.app_context():
+        fee = Fee.query.filter_by(description="Library Fee").one()
+        assert fee.status == "Due"
+        assert fee.amount == Decimal("500.00")
+
+
+def test_student_cannot_access_warden_fee_records(logged_in_client):
+    response = logged_in_client.get("/warden/fees")
+    assert response.status_code == 403
+
+
+def test_unauthenticated_user_cannot_access_warden_fee_records(client):
+    response = client.get("/warden/fees")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
