@@ -2,7 +2,7 @@
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, render_template
 from flask_login import current_user, login_required
 
 from app import db
@@ -11,6 +11,13 @@ from app.models import LaundryRequest
 laundry_bp = Blueprint("laundry", __name__, url_prefix="/api/laundry")
 
 VALID_STATUSES = {"pending", "processing", "ready", "delivered", "cancelled"}
+
+@laundry_bp.route("/page", methods=["GET"])
+@login_required
+def laundry_page():
+    return render_template("laundry.html")
+
+
 
 
 def parse_date(value, field_name, required=False):
