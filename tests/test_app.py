@@ -90,6 +90,14 @@ def test_home_endpoint(logged_in_client):
     assert b"Common Facilities" in response.data
 
 
+def test_security_headers(logged_in_client):
+    response = logged_in_client.get("/")
+
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "SAMEORIGIN"
+    assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+
+
 def test_login_page_loads(client):
     response = client.get("/login")
 
