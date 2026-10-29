@@ -26,4 +26,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
+        env:
+          SECRET_KEY: test-secret-key-for-ci-only
         run: python -m pytest -q
