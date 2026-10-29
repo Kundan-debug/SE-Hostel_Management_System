@@ -44,8 +44,6 @@ def create_app(test_config=None):
     app = Flask(__name__)
 
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-    if not app.config["SECRET_KEY"] and not app.config.get("TESTING"):
-        raise RuntimeError("SECRET_KEY must be set in the environment.")
 
     db_user = os.getenv("DB_USER", "root")
     db_password = os.getenv("DB_PASSWORD", "")
@@ -67,6 +65,8 @@ def create_app(test_config=None):
 
     if test_config:
         app.config.update(test_config)
+    if not app.config.get("SECRET_KEY") and not app.config.get("TESTING"):
+        raise RuntimeError("SECRET_KEY must be set in the environment.")
 
     upload_folder = Path(app.root_path) / "static" / "uploads"
     upload_folder.mkdir(parents=True, exist_ok=True)

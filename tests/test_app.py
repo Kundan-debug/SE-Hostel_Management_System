@@ -1305,3 +1305,10 @@ def test_student_only_sees_own_mess_records(logged_in_client, app):
     response = logged_in_client.get("/mess/")
     assert response.status_code == 200
     assert b"Private complaint" not in response.data
+
+
+def test_missing_secret_key_raises_error(monkeypatch):
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY must be set in the environment"):
+        create_app()
