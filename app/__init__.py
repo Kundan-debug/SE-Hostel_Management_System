@@ -132,6 +132,9 @@ def create_app(test_config=None):
     from app.student_directory_routes import student_directory_bp
     app.register_blueprint(student_directory_bp)
 
+    from app.lost_found_routes import lost_found_bp
+    app.register_blueprint(lost_found_bp)
+
     @app.route("/")
     @login_required
     def home():

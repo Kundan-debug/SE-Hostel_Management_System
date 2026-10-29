@@ -23,6 +23,7 @@ from app.models import (
     MessFeedback,
     MessHoliday,
     MessFee,
+    LostFoundItem,
 )
 
 
@@ -1313,3 +1314,143 @@ def test_missing_secret_key_raises_error(monkeypatch):
 
     with pytest.raises(RuntimeError, match="SECRET_KEY must be set in the environment"):
         create_app()
+
+
+# Lost and Found tests
+
+def test_lost_found_requires_login(client):
+    response = client.get("/lost-found/")
+    assert response.status_code == 302
+    assert "/login" in response.location
+
+
+def test_student_can_view_lost_found(logged_in_client):
+    response = logged_in_client.get("/lost-found/")
+    assert response.status_code == 200
+    assert b"Lost and Found" in response.data
+
+
+def test_student_can_report_found_item(logged_in_client, app):
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Found",
+            "title": "Black Wallet",
+            "description": "A black wallet found near the library.",
+            "location": "Library",
+            "item_date": date.today().isoformat(),
+        },
+    )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        item = LostFoundItem.query.filter_by(title="Black Wallet").first()
+        assert item is not None
+        assert item.item_type == "Found"
+        assert item.status == "Open"
+
+
+def test_student_can_search_lost_found_items(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        db.session.add(
+            LostFoundItem(
+                student_id=student.id,
+                item_type="Lost",
+                title="Blue Water Bottle",
+                description="Blue bottle with a sticker.",
+                location="Cafeteria",
+                item_date=date.today(),
+                status="Open",
+            )
+        )
+        db.session.commit()
+
+    response = logged_in_client.get("/lost-found/?q=Water")
+
+    assert response.status_code == 200
+    assert b"Blue Water Bottle" in response.data
+
+
+def test_student_can_claim_found_item(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        other_student = Student(
+            full_name="Other Student",
+            email="other@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="other-proof.pdf",
+        )
+        db.session.add(other_student)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=other_student.id,
+            item_type="Found",
+            title="Found Keys",
+            description="Keys found near the entrance.",
+            location="Entrance",
+            item_date=date.today(),
+            status="Open",
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    response = logged_in_client.post(f"/lost-found/{item_id}/claim")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        assert item.status == "Claimed"
+        assert item.claimant_id == student.id
+
+
+def test_reporter_can_mark_claimed_item_returned(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        other_student = Student(
+            full_name="Claimant Student",
+            email="claimant@gmail.com",
+            password_hash=generate_password_hash("ClaimPass123!"),
+            contact_number="9876543214",
+            srn="CLAIM123",
+            parent_name="Claimant Parent",
+            parent_contact_number="9876543215",
+            hostel_name="Test Hostel",
+            room_number="103",
+            id_proof_filename="claimant-proof.pdf",
+        )
+        db.session.add(other_student)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=student.id,
+            item_type="Found",
+            title="Silver Keys",
+            description="Keys found in the hallway.",
+            location="Hallway",
+            item_date=date.today(),
+            status="Claimed",
+            claimant_id=other_student.id,
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    response = logged_in_client.post(f"/lost-found/{item_id}/return")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Returned"

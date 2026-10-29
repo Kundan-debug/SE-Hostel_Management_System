@@ -549,3 +549,42 @@ class Warden(UserMixin, db.Model):
 
     def get_id(self):
         return f"warden:{self.id}"
+
+
+class LostFoundItem(db.Model):
+    __tablename__ = "lost_found_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=False,
+        index=True,
+    )
+    item_type = db.Column(db.String(10), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(1000), nullable=False)
+    location = db.Column(db.String(150), nullable=False)
+    item_date = db.Column(db.Date, nullable=False)
+    photo_filename = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(20), nullable=False, default="Open")
+    claimant_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id"),
+        nullable=True,
+    )
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    reporter = db.relationship(
+        "Student",
+        foreign_keys=[student_id],
+        backref="reported_lost_found_items",
+    )
+    claimant = db.relationship(
+        "Student",
+        foreign_keys=[claimant_id],
+    )
