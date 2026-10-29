@@ -216,8 +216,19 @@ def leave_requests():
             flash("Invalid decision.", "error")
         else:
             application.status = status
-            db.session.commit()
-            flash(f"Leave request {status.lower()}.", "success")
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                current_app.logger.exception(
+                    "Failed to update leave request %s.", application_id
+                )
+                flash(
+                    "Could not update the leave request. Please try again.",
+                    "error",
+                )
+            else:
+                flash(f"Leave request {status.lower()}.", "success")
 
         return redirect(url_for("warden.leave_requests"))
 

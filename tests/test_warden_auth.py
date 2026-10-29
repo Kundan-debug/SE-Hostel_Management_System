@@ -192,3 +192,140 @@ def test_warden_cannot_view_receipt_for_unsuccessful_payment(client, app, warden
 
     response = client.get(f"/warden/fees/receipts/{payment_id}")
     assert response.status_code == 404
+
+
+def _create_leave_application(app):
+    from datetime import date
+    from app.models import LeaveApplication, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        application = LeaveApplication(
+            student_id=student.id,
+            leave_type="Personal",
+            start_date=date(2026, 11, 5),
+            end_date=date(2026, 11, 6),
+            reason="Family function",
+            status="Pending",
+        )
+        db.session.add(application)
+        db.session.commit()
+        return application.id
+
+
+def _login_warden(client, warden):
+    return client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+
+
+def test_warden_can_view_leave_requests(client, app, warden):
+    from app.models import LeaveApplication
+
+    application_id = _create_leave_application(app)
+    _login_warden(client, warden)
+
+    response = client.get("/warden/leave-requests")
+
+    assert response.status_code == 200
+    assert b"Family function" in response.data
+    assert b"Pending" in response.data
+
+
+@pytest.mark.parametrize("decision", ["Approved", "Rejected"])
+def test_warden_can_decide_pending_leave_request(
+    client, app, warden, decision
+):
+    from app.models import LeaveApplication
+
+    application_id = _create_leave_application(app)
+    _login_warden(client, warden)
+
+    response = client.post("/warden/leave-requests", data={
+        "application_id": str(application_id),
+        "status": decision,
+    })
+
+    assert response.status_code == 302
+    with app.app_context():
+        application = db.session.get(LeaveApplication, application_id)
+        assert application.status == decision
+
+
+def test_warden_rejects_invalid_leave_decision(client, app, warden):
+    from app.models import LeaveApplication
+
+    application_id = _create_leave_application(app)
+    _login_warden(client, warden)
+
+    response = client.post("/warden/leave-requests", data={
+        "application_id": str(application_id),
+        "status": "Maybe",
+    })
+
+    assert response.status_code == 302
+    with app.app_context():
+        application = db.session.get(LeaveApplication, application_id)
+        assert application.status == "Pending"
+
+
+def test_warden_cannot_change_decided_leave_request(client, app, warden):
+    from app.models import LeaveApplication
+
+    application_id = _create_leave_application(app)
+    with app.app_context():
+        application = db.session.get(LeaveApplication, application_id)
+        application.status = "Approved"
+        db.session.commit()
+
+    _login_warden(client, warden)
+    response = client.post("/warden/leave-requests", data={
+        "application_id": str(application_id),
+        "status": "Rejected",
+    })
+
+    assert response.status_code == 302
+    with app.app_context():
+        application = db.session.get(LeaveApplication, application_id)
+        assert application.status == "Approved"
+
+
+def test_student_cannot_access_warden_leave_requests(logged_in_client):
+    response = logged_in_client.get("/warden/leave-requests")
+    assert response.status_code == 403
+
+
+def test_unauthenticated_user_cannot_access_warden_leave_requests(client):
+    response = client.get("/warden/leave-requests")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_leave_decision_commit_failure_rolls_back(
+    client, app, warden, monkeypatch
+):
+    from unittest.mock import Mock
+    from sqlalchemy.exc import SQLAlchemyError
+    from app.models import LeaveApplication
+
+    application_id = _create_leave_application(app)
+    _login_warden(client, warden)
+
+    rollback = Mock()
+    with app.app_context():
+        monkeypatch.setattr(db.session, "commit", Mock(
+            side_effect=SQLAlchemyError("simulated database failure")
+        ))
+        monkeypatch.setattr(db.session, "rollback", rollback)
+
+        response = client.post("/warden/leave-requests", data={
+            "application_id": str(application_id),
+            "status": "Approved",
+        })
+
+        assert response.status_code == 302
+        rollback.assert_called_once()
+        assert b"Could not update the leave request" in client.get(
+            "/warden/leave-requests", follow_redirects=True
+        ).data
