@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Mess Menu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+            background: #f5f7fb;
+            color: #222;
+        }
+        h1, h2 { color: #243b64; }
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #0001;
+        }
+        form { display: grid; gap: 12px; }
+        label { font-weight: bold; }
+        input, select, textarea, button {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font: inherit;
+        }
+        textarea { min-height: 75px; }
+        button {
+            background: #243b64;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #172947; }
+        .delete { background: #b42318; }
+        .delete:hover { background: #8f1b13; }
+        .menu {
+            border-top: 1px solid #ddd;
+            padding: 18px 0;
+        }
+        .messages { padding: 0; list-style: none; }
+        .messages li {
+            background: #e8f3e8;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 5px;
+        }
+        .error { background: #fde8e8 !important; }
+        .available { display: flex; gap: 8px; align-items: center; }
+        .available input { width: auto; }
+        @media (min-width: 700px) {
+            .fields {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Mess Menu</h1>
+    <p>Create, edit, and remove weekly mess menu entries.</p>
+    <p><a href="{{ url_for('warden.dashboard') }}">Back to Warden Dashboard</a></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="messages">
+                {% for category, message in messages %}
+                    <li class="{{ 'error' if category == 'error' else '' }}">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <section class="card">
+        <h2>Add Menu Entry</h2>
+        <form method="POST" action="{{ url_for('mess_menu.manage_menu') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="fields">
+                <div>
+                    <label for="day_of_week">Day</label>
+                    <select id="day_of_week" name="day_of_week" required>
+                        {% for day in weekdays %}
+                            <option value="{{ day }}">{{ day }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="meal_type">Meal</label>
+                    <select id="meal_type" name="meal_type" required>
+                        {% for meal in meal_types %}
+                            <option value="{{ meal }}">{{ meal }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="start_time">Start Time</label>
+                    <input id="start_time" type="time" name="start_time" required>
+                </div>
+                <div>
+                    <label for="end_time">End Time</label>
+                    <input id="end_time" type="time" name="end_time" required>
+                </div>
+            </div>
+            <label for="menu_items">Menu Items</label>
+            <textarea id="menu_items" name="menu_items" maxlength="5000"
+                      placeholder="Example: Idli, sambar, chutney" required></textarea>
+            <button type="submit">Add Menu Entry</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Existing Menu Entries</h2>
+        {% for menu in menus %}
+            <div class="menu">
+                <h3>{{ menu.day_of_week }} — {{ menu.meal_type }}</h3>
+                <form method="POST"
+                      action="{{ url_for('mess_menu.update_menu', menu_id=menu.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="fields">
+                        <div>
+                            <label>Day</label>
+                            <select name="day_of_week" required>
+                                {% for day in weekdays %}
+                                    <option value="{{ day }}"
+                                        {% if menu.day_of_week == day %}selected{% endif %}>
+                                        {{ day }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Meal</label>
+                            <select name="meal_type" required>
+                                {% for meal in meal_types %}
+                                    <option value="{{ meal }}"
+                                        {% if menu.meal_type == meal %}selected{% endif %}>
+                                        {{ meal }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label>Start Time</label>
+                            <input type="time" name="start_time"
+                                   value="{{ menu.start_time.strftime('%H:%M') }}" required>
+                        </div>
+                        <div>
+                            <label>End Time</label>
+                            <input type="time" name="end_time"
+                                   value="{{ menu.end_time.strftime('%H:%M') }}" required>
+                        </div>
+                    </div>
+                    <label>Menu Items</label>
+                    <textarea name="menu_items" maxlength="5000" required>{{ menu.menu_items }}</textarea>
+                    <label class="available">
+                        <input type="checkbox" name="is_available"
+                               {% if menu.is_available %}checked{% endif %}>
+                        Available
+                    </label>
+                    <button type="submit">Save Changes</button>
+                </form>
+                <form method="POST"
+                      action="{{ url_for('mess_menu.delete_menu', menu_id=menu.id) }}"
+                      onsubmit="return confirm('Delete this menu entry?');"
+                      style="margin-top: 10px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="delete" type="submit">Delete Entry</button>
+                </form>
+            </div>
+        {% else %}
+            <p>No menu entries have been added yet.</p>
+        {% endfor %}
+    </section>
+</body>
+</html>
