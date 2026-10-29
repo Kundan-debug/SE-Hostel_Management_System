@@ -145,3 +145,50 @@ def test_warden_rejects_nonexistent_student(client, app, warden):
     assert response.status_code == 200
     with app.app_context():
         assert Fee.query.filter_by(description="Invalid Student Fee").first() is None
+
+
+def test_warden_cannot_view_receipt_for_missing_payment(client, warden):
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+
+    response = client.get("/warden/fees/receipts/99999")
+    assert response.status_code == 404
+
+
+def test_warden_cannot_view_receipt_for_unsuccessful_payment(client, app, warden):
+    from datetime import date
+    from decimal import Decimal
+    from app.models import Fee, Payment, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        fee = Fee(
+            student_id=student.id,
+            description="Receipt Test Fee",
+            fee_type="Hostel",
+            amount=Decimal("500.00"),
+            due_date=date(2026, 11, 15),
+        )
+        db.session.add(fee)
+        db.session.flush()
+
+        payment = Payment(
+            fee_id=fee.id,
+            student_id=student.id,
+            amount=Decimal("500.00"),
+            transaction_reference="TEST-RECEIPT-001",
+            status="Pending",
+        )
+        db.session.add(payment)
+        db.session.commit()
+        payment_id = payment.id
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+
+    response = client.get(f"/warden/fees/receipts/{payment_id}")
+    assert response.status_code == 404
