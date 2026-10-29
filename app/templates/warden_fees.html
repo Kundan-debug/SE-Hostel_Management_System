@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Fee Records</title>
+    <style>
+        body { font: 16px Arial, sans-serif; background: #f3f6fb; color: #172033; padding: 24px; }
+        main { max-width: 1100px; margin: auto; }
+        section { background: white; padding: 20px; margin-bottom: 24px; border-radius: 10px; }
+        input, select { padding: 10px; margin: 6px 0 12px; width: 100%; box-sizing: border-box; }
+        button, a { padding: 10px 14px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        .table-wrap { overflow-x: auto; }
+        .error { color: #b91c1c; }
+        .success { color: #15803d; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Manage Fee Records</h1>
+    <p><a href="{{ url_for('warden.dashboard') }}">← Back to Warden Dashboard</a></p>
+
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+        <p class="{{ category }}">{{ message }}</p>
+    {% endfor %}
+
+    <section>
+        <h2>Add Fee Record</h2>
+        <form method="post">
+            <label for="student_id">Student</label>
+            <select id="student_id" name="student_id" required>
+                <option value="">Select a student</option>
+                {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.full_name }} — {{ student.srn }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="description">Description</label>
+            <input id="description" name="description" maxlength="200" required>
+
+            <label for="fee_type">Fee type</label>
+            <input id="fee_type" name="fee_type" maxlength="50" required>
+
+            <label for="amount">Amount (₹)</label>
+            <input id="amount" name="amount" type="number" min="0.01" step="0.01" required>
+
+            <label for="due_date">Due date</label>
+            <input id="due_date" name="due_date" type="date" required>
+
+            <button type="submit">Create Fee Record</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>All Student Fee Records</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>SRN</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Receipts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in fees %}
+                    <tr>
+                        <td>{{ fee.student.full_name }}</td>
+                        <td>{{ fee.student.srn }}</td>
+                        <td>{{ fee.description }}</td>
+                        <td>{{ fee.fee_type }}</td>
+                        <td>₹{{ "%.2f"|format(fee.amount) }}</td>
+                        <td>{{ fee.due_date.strftime("%d %b %Y") }}</td>
+                        <td>{{ fee.status }}</td>
+                        <td>
+                            {% for payment in fee.payments %}
+                                {% if payment.status == "Success" %}
+                                    <a href="{{ url_for('warden.fee_receipt', payment_id=payment.id) }}">Receipt #{{ payment.id }}</a>
+                                {% endif %}
+                            {% else %}
+                                —
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8">No fee records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>
