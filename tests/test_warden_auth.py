@@ -192,3 +192,104 @@ def test_warden_cannot_view_receipt_for_unsuccessful_payment(client, app, warden
 
     response = client.get(f"/warden/fees/receipts/{payment_id}")
     assert response.status_code == 404
+
+
+def test_unauthenticated_user_cannot_access_warden_complaints(client):
+    response = client.get("/warden/complaints")
+    assert response.status_code == 302
+    assert "/login" in response.headers["Location"]
+
+
+def test_student_cannot_access_warden_complaints(logged_in_client):
+    response = logged_in_client.get("/warden/complaints")
+    assert response.status_code == 403
+
+
+def test_warden_can_view_complaints(client, app, warden):
+    from app.models import Complaint, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        db.session.add(Complaint(
+            student_id=student.id,
+            category="Room Maintenance",
+            description="Fan is not working",
+            priority="High",
+            status="Open",
+        ))
+        db.session.commit()
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+
+    response = client.get("/warden/complaints")
+    assert response.status_code == 200
+    assert b"Fan is not working" in response.data
+    assert b"Test Student" in response.data
+
+
+def test_warden_can_update_complaint(client, app, warden):
+    from app.models import Complaint, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        complaint = Complaint(
+            student_id=student.id,
+            category="Room Maintenance",
+            description="Fan is not working",
+            priority="Medium",
+            status="Open",
+        )
+        db.session.add(complaint)
+        db.session.commit()
+        complaint_id = complaint.id
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+
+    response = client.post("/warden/complaints", data={
+        "complaint_id": str(complaint_id),
+        "status": "Resolved",
+        "priority": "High",
+    })
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        complaint = db.session.get(Complaint, complaint_id)
+        assert complaint.status == "Resolved"
+        assert complaint.priority == "High"
+
+
+def test_warden_rejects_invalid_complaint_status(client, app, warden):
+    from app.models import Complaint, Student
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").one()
+        complaint = Complaint(
+            student_id=student.id,
+            category="Room Maintenance",
+            description="Broken fan",
+            priority="Medium",
+            status="Open",
+        )
+        db.session.add(complaint)
+        db.session.commit()
+        complaint_id = complaint.id
+
+    client.post("/login", data={
+        "email": warden.email,
+        "password": "WardenPass123!",
+    })
+
+    response = client.post("/warden/complaints", data={
+        "complaint_id": str(complaint_id),
+        "status": "Invalid Status",
+        "priority": "High",
+    })
+
+    assert response.status_code == 400
