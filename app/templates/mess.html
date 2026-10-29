@@ -164,6 +164,7 @@
                                     <button type="button" disabled>Registered</button>
                                 {% else %}
                                     <form method="POST" action="{{ url_for('mess.register_meal') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="menu_id" value="{{ meal.id }}">
                                         <button type="submit">Register for Meal</button>
                                     </form>
@@ -195,6 +196,7 @@
     <section class="section">
         <h3>Feedback &amp; Complaints</h3>
         <form class="feedback-form" method="POST" action="{{ url_for('mess.submit_feedback') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label for="category">Submission type</label>
             <select id="category" name="category" required>
                 <option value="Feedback">Feedback</option>

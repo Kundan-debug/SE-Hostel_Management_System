@@ -29,6 +29,7 @@
     <section>
         <h2>Add Fee Record</h2>
         <form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label for="student_id">Student</label>
             <select id="student_id" name="student_id" required>
                 <option value="">Select a student</option>

@@ -172,6 +172,7 @@
 
                 <form action="{{ url_for('profile.upload_profile_photo') }}"
                       method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <label for="profile_photo">Change profile photo</label>
                     <input id="profile_photo" name="profile_photo"
                            type="file"
@@ -193,6 +194,7 @@
         </p>
 
         <form action="{{ url_for('profile.edit_profile') }}" method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="grid">
                 <div>
                     <label for="full_name">Full name</label>

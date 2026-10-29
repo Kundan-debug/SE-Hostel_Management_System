@@ -60,6 +60,7 @@
             <h2>Assign or transfer a student</h2>
 
             <form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="transfer">
 
                 <label>
@@ -122,6 +123,7 @@
                                     method="post"
                                     action="{{ url_for('warden.release_allocation', student_id=student.id) }}"
                                 >
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button>Release</button>
                                 </form>
                             </td>

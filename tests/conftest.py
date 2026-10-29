@@ -32,6 +32,7 @@ def make_student(email, srn, hostel="Test Hostel", room="101"):
 def app(tmp_path):
     app = create_app({
         "TESTING": True,
+        "WTF_CSRF_ENABLED": False,
         "SECRET_KEY": "test-secret-key",
         "SQLALCHEMY_DATABASE_URI": "sqlite://",
     })

@@ -8,7 +8,7 @@ from flask import Blueprint, abort, current_app, flash, redirect, render_templat
 from flask_login import current_user, login_required
 
 from app import db
-from app.models import Room, Complaint, Student, Fee, Payment, COMPLAINT_PRIORITIES, COMPLAINT_STATUSES
+from app.models import Room, Complaint, Student, Fee, Payment, LeaveApplication, COMPLAINT_PRIORITIES, COMPLAINT_STATUSES
 
 warden_bp = Blueprint("warden", __name__, url_prefix="/warden")
 
@@ -197,3 +197,46 @@ def fee_receipt(payment_id):
     if payment is None or payment.status != "Success":
         abort(404)
     return render_template("receipt.html", payment=payment)
+
+
+@warden_bp.route("/leave-requests", methods=["GET", "POST"])
+@warden_required
+def leave_requests():
+    if request.method == "POST":
+        application_id = request.form.get("application_id", type=int)
+        status = request.form.get("status")
+
+        application = db.session.get(LeaveApplication, application_id)
+
+        if application is None:
+            flash("Leave request not found.", "error")
+        elif application.status != "Pending":
+            flash("This leave request has already been decided.", "error")
+        elif status not in ("Approved", "Rejected"):
+            flash("Invalid decision.", "error")
+        else:
+            application.status = status
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                current_app.logger.exception(
+                    "Failed to update leave request %s.", application_id
+                )
+                flash(
+                    "Could not update the leave request. Please try again.",
+                    "error",
+                )
+            else:
+                flash(f"Leave request {status.lower()}.", "success")
+
+        return redirect(url_for("warden.leave_requests"))
+
+    applications = LeaveApplication.query.order_by(
+        LeaveApplication.created_at.desc()
+    ).all()
+
+    return render_template(
+        "warden_leave_requests.html",
+        applications=applications,
+    )
