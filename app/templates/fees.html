@@ -195,6 +195,7 @@
                     {% if fee.status == "Due" %}
                         <form method="post"
                               action="{{ url_for('fees.simulate_payment', fee_id=fee.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit">Pay (Demo)</button>
                         </form>
                     {% else %}

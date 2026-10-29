@@ -329,3 +329,19 @@ def test_leave_decision_commit_failure_rolls_back(
         assert b"Could not update the leave request" in client.get(
             "/warden/leave-requests", follow_redirects=True
         ).data
+
+
+def test_warden_leave_decision_requires_csrf_token(client, app, warden):
+    client.post(
+        "/login",
+        data={"email": warden.email, "password": "WardenPass123!"},
+    )
+
+    app.config["WTF_CSRF_ENABLED"] = True
+
+    response = client.post(
+        "/warden/leave-requests",
+        data={"request_id": "1", "decision": "approve"},
+    )
+
+    assert response.status_code == 400

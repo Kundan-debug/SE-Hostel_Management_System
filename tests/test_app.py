@@ -30,6 +30,7 @@ from app.models import (
 def app():
     app = create_app({
         "TESTING": True,
+        "WTF_CSRF_ENABLED": False,
         "SECRET_KEY": "test-secret-key",
         "SQLALCHEMY_DATABASE_URI": "sqlite://",
     })

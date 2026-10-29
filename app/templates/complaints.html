@@ -141,6 +141,7 @@
 
         <form method="POST" action="{{ url_for('complaint.submit_complaint') }}"
               enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-grid">
                 <div class="field">
                     <label for="category">Category</label>

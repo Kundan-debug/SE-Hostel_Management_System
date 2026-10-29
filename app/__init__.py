@@ -21,6 +21,7 @@ from flask_login import (
     current_user,
 )
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import (
     generate_password_hash,
@@ -31,6 +32,8 @@ from werkzeug.utils import secure_filename
 load_dotenv()
 
 db = SQLAlchemy()
+
+csrf = CSRFProtect()
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
@@ -82,6 +85,7 @@ def create_app(test_config=None):
 
     db.init_app(app)
     login_manager.init_app(app)
+    csrf.init_app(app)
 
     from app.models import (
         Student,

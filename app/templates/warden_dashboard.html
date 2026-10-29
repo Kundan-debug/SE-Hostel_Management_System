@@ -93,6 +93,7 @@
             action="{{ url_for('logout') }}"
             style="margin-top: 24px"
         >
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button>Log out</button>
         </form>
     </main>
