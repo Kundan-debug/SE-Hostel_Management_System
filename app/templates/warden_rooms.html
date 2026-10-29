@@ -65,6 +65,7 @@
             <h2>Add room</h2>
 
             <form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input
                     name="hostel_name"
                     placeholder="Hostel name"
@@ -118,6 +119,7 @@
                                     method="post"
                                     action="{{ url_for('warden.update_room', room_id=room.id) }}"
                                 >
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <select name="maintenance_status">
                                         <option
                                             {% if room.maintenance_status == 'Available' %}selected{% endif %}

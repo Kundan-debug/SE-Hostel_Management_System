@@ -110,6 +110,7 @@
                 method="post"
                 action="{{ url_for('announcement.manage_announcements') }}"
             >
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>Title</label>
                 <input
                     name="title"
@@ -158,6 +159,7 @@
                     method="post"
                     action="{{ url_for('announcement.edit_announcement', announcement_id=item.id) }}"
                 >
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <label>Title</label>
                     <input
                         name="title"
@@ -192,6 +194,7 @@
                     action="{{ url_for('announcement.delete_announcement', announcement_id=item.id) }}"
                     onsubmit="return confirm('Delete this announcement?')"
                 >
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="danger">Delete</button>
                 </form>
             </article>

@@ -134,6 +134,7 @@
         <h2>New Application</h2>
 
         <form method="POST" action="{{ url_for('leave.apply_leave') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-grid">
                 <div class="field">
                     <label for="leave_type">Leave type</label>
@@ -207,6 +208,7 @@
                                     <form method="POST"
                                           action="{{ url_for('leave.cancel_leave', application_id=item.id) }}"
                                           onsubmit="return confirm('Cancel this leave application?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button class="cancel" type="submit">Cancel</button>
                                     </form>
                                 {% else %}
