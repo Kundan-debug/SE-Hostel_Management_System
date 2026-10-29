@@ -43,9 +43,7 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 def create_app(test_config=None):
     app = Flask(__name__)
 
-    app.config["SECRET_KEY"] = os.getenv(
-        "SECRET_KEY", "dev-only-change-me"
-    )
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
     db_user = os.getenv("DB_USER", "root")
     db_password = os.getenv("DB_PASSWORD", "")
@@ -59,13 +57,28 @@ def create_app(test_config=None):
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["MAX_CONTENT_LENGTH"] = MAX_FILE_SIZE
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = (
+        os.getenv("COOKIE_SECURE", "false").lower() == "true"
+    )
 
     if test_config:
         app.config.update(test_config)
+    if not app.config.get("SECRET_KEY") and not app.config.get("TESTING"):
+        raise RuntimeError("SECRET_KEY must be set in the environment.")
 
     upload_folder = Path(app.root_path) / "static" / "uploads"
     upload_folder.mkdir(parents=True, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = str(upload_folder)
+
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
     db.init_app(app)
     login_manager.init_app(app)
