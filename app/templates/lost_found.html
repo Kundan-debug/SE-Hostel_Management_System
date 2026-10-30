@@ -3,114 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Lost and Found</title>
+    <title>Lost &amp; Found | Hostel Management</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #243247;
+        }
+        .container { max-width: 1100px; margin: auto; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        h1 { margin: 0 0 8px; color: #1e3a5f; }
+        h2 { margin-top: 0; color: #1e3a5f; }
+        .subtitle { color: #64748b; margin: 0; }
+        .button, button {
+            display: inline-block;
+            border: 0;
+            border-radius: 7px;
+            padding: 11px 16px;
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .button:hover, button:hover { background: #1d4ed8; }
+        .panel {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, .06);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .field { display: flex; flex-direction: column; gap: 7px; }
+        .field.full { grid-column: 1 / -1; }
+        label { font-weight: bold; font-size: 14px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font: inherit;
+            background: white;
+        }
+        textarea { min-height: 100px; resize: vertical; }
+        .search-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+        }
+        .items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+        }
+        .item-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, .06);
+            overflow-wrap: anywhere;
+        }
+        .item-card h3 { margin-top: 0; color: #1e3a5f; }
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .status-Claimed { background: #fef3c7; color: #92400e; }
+        .status-Returned { background: #dcfce7; color: #166534; }
+        .item-photo {
+            display: block;
+            width: 100%;
+            max-height: 220px;
+            object-fit: contain;
+            margin: 14px 0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        .item-card form { margin-top: 12px; }
+        .flash {
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 7px;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .flash.success { background: #dcfce7; color: #166534; }
+        .empty { color: #64748b; padding: 12px 0; }
+        @media (max-width: 700px) {
+            body { padding: 14px; }
+            .panel { padding: 18px; }
+            .form-grid, .search-grid { grid-template-columns: 1fr; }
+            .field.full { grid-column: auto; }
+        }
+    </style>
 </head>
 <body>
-    <h1>Lost and Found</h1>
+<main class="container">
+    <header>
+        <div>
+            <h1>🔎 Lost and Found</h1>
+            <p class="subtitle">Report missing belongings and help reunite items with their owners.</p>
+        </div>
+        <a class="button" href="{{ url_for('home') }}">← Dashboard</a>
+    </header>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
-            <p>{{ message }}</p>
+            <div class="flash {{ 'success' if category == 'success' else '' }}" role="status">
+                {{ message }}
+            </div>
         {% endfor %}
     {% endwith %}
 
-    <h2>Report an Item</h2>
-    <form action="{{ url_for('lost_found.report_item') }}"
-          method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <section class="panel">
+        <h2>Report an Item</h2>
+        <form action="{{ url_for('lost_found.report_item') }}"
+              method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="item_type">Item type</label>
+                    <select id="item_type" name="item_type" required>
+                        <option value="Lost">Lost</option>
+                        <option value="Found">Found</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="title">Item name</label>
+                    <input id="title" type="text" name="title" maxlength="100" required>
+                </div>
+                <div class="field full">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" maxlength="1000" required></textarea>
+                </div>
+                <div class="field">
+                    <label for="location">Location</label>
+                    <input id="location" type="text" name="location" maxlength="150" required>
+                </div>
+                <div class="field">
+                    <label for="item_date">Date lost/found</label>
+                    <input id="item_date" type="date" name="item_date" required>
+                </div>
+                <div class="field full">
+                    <label for="photo">Photo (JPG, JPEG, or PNG; maximum 5 MB)</label>
+                    <input id="photo" type="file" name="photo" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                </div>
+                <div class="field full">
+                    <button type="submit">Submit Report</button>
+                </div>
+            </div>
+        </form>
+    </section>
 
-        <label>Item type:</label>
-        <select name="item_type" required>
-            <option value="Lost">Lost</option>
-            <option value="Found">Found</option>
-        </select>
-        <br><br>
+    <section class="panel">
+        <h2>Search Items</h2>
+        <form method="GET" action="{{ url_for('lost_found.list_items') }}">
+            <div class="search-grid">
+                <input type="text" name="q"
+                       placeholder="Search name, description, or location"
+                       value="{{ query }}">
+                <select name="type" aria-label="Filter by type">
+                    <option value="">All types</option>
+                    <option value="Lost" {% if item_type == 'Lost' %}selected{% endif %}>Lost</option>
+                    <option value="Found" {% if item_type == 'Found' %}selected{% endif %}>Found</option>
+                </select>
+                <select name="status" aria-label="Filter by status">
+                    <option value="">All statuses</option>
+                    <option value="Open" {% if status == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="Claimed" {% if status == 'Claimed' %}selected{% endif %}>Claimed</option>
+                    <option value="Returned" {% if status == 'Returned' %}selected{% endif %}>Returned</option>
+                </select>
+                <button type="submit">Search</button>
+            </div>
+        </form>
+    </section>
 
-        <label>Item name:</label>
-        <input type="text" name="title" maxlength="100" required>
-        <br><br>
-
-        <label>Description:</label>
-        <textarea name="description" maxlength="1000" required></textarea>
-        <br><br>
-
-        <label>Location:</label>
-        <input type="text" name="location" maxlength="150" required>
-        <br><br>
-
-        <label>Date lost/found:</label>
-        <input type="date" name="item_date" required>
-        <br><br>
-
-        <label>Photo (JPG, JPEG, or PNG; maximum 5 MB):</label>
-        <input type="file" name="photo" accept=".jpg,.jpeg,.png">
-        <br><br>
-
-        <button type="submit">Submit Report</button>
-    </form>
-
-    <hr>
-
-    <h2>Search Items</h2>
-    <form method="GET" action="{{ url_for('lost_found.list_items') }}">
-        <input type="text" name="q" placeholder="Search name, description, or location"
-               value="{{ query }}">
-        <select name="type">
-            <option value="">All types</option>
-            <option value="Lost" {% if item_type == 'Lost' %}selected{% endif %}>Lost</option>
-            <option value="Found" {% if item_type == 'Found' %}selected{% endif %}>Found</option>
-        </select>
-        <select name="status">
-            <option value="">All statuses</option>
-            <option value="Open" {% if status == 'Open' %}selected{% endif %}>Open</option>
-            <option value="Claimed" {% if status == 'Claimed' %}selected{% endif %}>Claimed</option>
-            <option value="Returned" {% if status == 'Returned' %}selected{% endif %}>Returned</option>
-        </select>
-        <button type="submit">Search</button>
-    </form>
-
-    <h2>Reported Items</h2>
-
-    {% if items %}
-        {% for item in items %}
-            <article>
-                <h3>{{ item.title }}</h3>
-                <p><strong>Type:</strong> {{ item.item_type }}</p>
-                <p><strong>Description:</strong> {{ item.description }}</p>
-                <p><strong>Location:</strong> {{ item.location }}</p>
-                <p><strong>Date:</strong> {{ item.item_date }}</p>
-                <p><strong>Status:</strong> {{ item.status }}</p>
-
-                {% if item.photo_filename %}
-                    <img
-                        src="{{ url_for('static', filename='uploads/lost_found/' ~ item.photo_filename) }}"
-                        alt="Photo of {{ item.title }}"
-                        width="200">
-                {% endif %}
-
-                {% if item.item_type == 'Found'
-                      and item.status == 'Open'
-                      and item.student_id != current_user.id %}
-                    <form method="POST"
-                          action="{{ url_for('lost_found.claim_item', item_id=item.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit">Claim Item</button>
-                    </form>
-                {% endif %}
-
-                {% if item.student_id == current_user.id
-                      and item.status == 'Claimed' %}
-                    <form method="POST"
-                          action="{{ url_for('lost_found.mark_returned', item_id=item.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit">Mark as Returned</button>
-                    </form>
-                {% endif %}
-            </article>
-            <hr>
-        {% endfor %}
-    {% else %}
-        <p>No items found.</p>
-    {% endif %}
+    <section>
+        <h2>Reported Items</h2>
+        {% if items %}
+            <div class="items">
+                {% for item in items %}
+                    <article class="item-card">
+                        <h3>{{ item.title }}</h3>
+                        <p><span class="badge">{{ item.item_type }}</span>
+                           <span class="badge status-{{ item.status }}">{{ item.status }}</span></p>
+                        <p><strong>Description:</strong> {{ item.description }}</p>
+                        <p><strong>Location:</strong> {{ item.location }}</p>
+                        <p><strong>Date:</strong> {{ item.item_date }}</p>
+                        {% if item.photo_filename %}
+                            <img class="item-photo"
+                                 src="{{ url_for('static', filename='uploads/lost_found/' ~ item.photo_filename) }}"
+                                 alt="Photo of {{ item.title }}">
+                        {% endif %}
+                        {% if item.item_type == 'Found' and item.status == 'Open'
+                              and item.student_id != current_user.id %}
+                            <form method="POST"
+                                  action="{{ url_for('lost_found.claim_item', item_id=item.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit">Claim Item</button>
+                            </form>
+                        {% endif %}
+                        {% if item.student_id == current_user.id and item.status == 'Claimed' %}
+                            <form method="POST"
+                                  action="{{ url_for('lost_found.mark_returned', item_id=item.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit">Mark as Returned</button>
+                            </form>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty">No items found. Try changing your search or filters.</p>
+        {% endif %}
+    </section>
+</main>
 </body>
 </html>

@@ -553,6 +553,10 @@ class Warden(UserMixin, db.Model):
 
 class LostFoundItem(db.Model):
     __tablename__ = "lost_found_items"
+    __table_args__ = (
+        CheckConstraint("item_type IN ('Lost', 'Found')", name="ck_lost_found_item_type"),
+        CheckConstraint("status IN ('Open', 'Claimed', 'Returned')", name="ck_lost_found_status"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(

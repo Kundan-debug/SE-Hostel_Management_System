@@ -25,6 +25,18 @@ lost_found_bp = Blueprint(
 )
 
 
+def valid_image_content(photo, extension):
+    photo.seek(0)
+    header = photo.read(8)
+    photo.seek(0)
+
+    if extension in {"jpg", "jpeg"}:
+        return header.startswith(b"\\xff\\xd8\\xff")
+    if extension == "png":
+        return header == b"\\x89PNG\\r\\n\\x1a\\n"
+    return False
+
+
 def photo_folder():
     folder = Path(current_app.config["UPLOAD_FOLDER"]) / "lost_found"
     folder.mkdir(parents=True, exist_ok=True)
@@ -110,6 +122,8 @@ def report_item():
         if len(photo.read()) > MAX_FILE_SIZE:
             errors.append("The photo must be 5 MB or smaller.")
         photo.seek(0)
+        if not valid_image_content(photo, extension):
+            errors.append("The uploaded file must contain a valid JPEG or PNG image.")
 
     if errors:
         for error in errors:
@@ -154,21 +168,37 @@ def report_item():
 @lost_found_bp.route("/<int:item_id>/claim", methods=["POST"])
 @login_required
 def claim_item(item_id):
-    item = db.session.get(LostFoundItem, item_id)
+    from flask import abort
+    from sqlalchemy import update
 
-    if item is None:
-        from flask import abort
-        abort(404)
+    try:
+        result = db.session.execute(
+            update(LostFoundItem)
+            .where(
+                LostFoundItem.id == item_id,
+                LostFoundItem.student_id != current_user.id,
+                LostFoundItem.item_type == "Found",
+                LostFoundItem.status == "Open",
+            )
+            .values(claimant_id=current_user.id, status="Claimed")
+        )
 
-    if item.student_id == current_user.id:
-        flash("You cannot claim your own report.", "error")
-    elif item.item_type != "Found" or item.status != "Open":
-        flash("This item cannot be claimed.", "error")
-    else:
-        item.claimant_id = current_user.id
-        item.status = "Claimed"
-        db.session.commit()
-        flash("Claim submitted successfully.", "success")
+        if result.rowcount == 1:
+            db.session.commit()
+            flash("Claim submitted successfully.", "success")
+        else:
+            db.session.rollback()
+            item = db.session.get(LostFoundItem, item_id)
+            if item is None:
+                abort(404)
+            if item.student_id == current_user.id:
+                flash("You cannot claim your own report.", "error")
+            else:
+                flash("This item cannot be claimed.", "error")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Lost and Found claim failed.")
+        flash("Could not claim the item. Please try again.", "error")
 
     return redirect(url_for("lost_found.list_items"))
 
@@ -176,19 +206,27 @@ def claim_item(item_id):
 @lost_found_bp.route("/<int:item_id>/return", methods=["POST"])
 @login_required
 def mark_returned(item_id):
-    item = db.session.get(LostFoundItem, item_id)
+    from flask import abort
 
+    item = db.session.get(LostFoundItem, item_id)
     if item is None:
-        from flask import abort
         abort(404)
 
     if item.student_id != current_user.id:
         flash("Only the person who reported the item can mark it returned.", "error")
-    elif item.status != "Claimed":
+        return redirect(url_for("lost_found.list_items"))
+
+    if item.status != "Claimed":
         flash("Only claimed items can be marked returned.", "error")
-    else:
+        return redirect(url_for("lost_found.list_items"))
+
+    try:
         item.status = "Returned"
         db.session.commit()
         flash("Item marked as returned.", "success")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Lost and Found return failed.")
+        flash("Could not mark the item returned. Please try again.", "error")
 
     return redirect(url_for("lost_found.list_items"))
