@@ -31,9 +31,9 @@ def valid_image_content(photo, extension):
     photo.seek(0)
 
     if extension in {"jpg", "jpeg"}:
-        return header.startswith(b"\\xff\\xd8\\xff")
+        return header.startswith(bytes([0xFF, 0xD8, 0xFF]))
     if extension == "png":
-        return header == b"\\x89PNG\\r\\n\\x1a\\n"
+        return header == bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
     return False
 
 
