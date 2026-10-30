@@ -415,4 +415,8 @@ def create_app(test_config=None):
     from app.warden_routes import warden_bp
     app.register_blueprint(warden_bp)
 
+    from app.mess_menu_routes import mess_menu_bp
+
+    app.register_blueprint(mess_menu_bp)
+
     return app
