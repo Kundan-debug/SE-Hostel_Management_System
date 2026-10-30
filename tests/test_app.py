@@ -23,6 +23,7 @@ from app.models import (
     MessFeedback,
     MessHoliday,
     MessFee,
+    LostFoundItem,
 )
 
 
@@ -1313,3 +1314,588 @@ def test_missing_secret_key_raises_error(monkeypatch):
 
     with pytest.raises(RuntimeError, match="SECRET_KEY must be set in the environment"):
         create_app()
+
+
+# Lost and Found tests
+
+def test_lost_found_requires_login(client):
+    response = client.get("/lost-found/")
+    assert response.status_code == 302
+    assert "/login" in response.location
+
+
+def test_student_can_view_lost_found(logged_in_client):
+    response = logged_in_client.get("/lost-found/")
+    assert response.status_code == 200
+    assert b"Lost and Found" in response.data
+
+
+def test_student_can_report_found_item(logged_in_client, app):
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Found",
+            "title": "Black Wallet",
+            "description": "A black wallet found near the library.",
+            "location": "Library",
+            "item_date": date.today().isoformat(),
+        },
+    )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        item = LostFoundItem.query.filter_by(title="Black Wallet").first()
+        assert item is not None
+        assert item.item_type == "Found"
+        assert item.status == "Open"
+
+
+def test_student_can_search_lost_found_items(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        db.session.add(
+            LostFoundItem(
+                student_id=student.id,
+                item_type="Lost",
+                title="Blue Water Bottle",
+                description="Blue bottle with a sticker.",
+                location="Cafeteria",
+                item_date=date.today(),
+                status="Open",
+            )
+        )
+        db.session.commit()
+
+    response = logged_in_client.get("/lost-found/?q=Water")
+
+    assert response.status_code == 200
+    assert b"Blue Water Bottle" in response.data
+
+
+def test_student_can_claim_found_item(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        other_student = Student(
+            full_name="Other Student",
+            email="other@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="other-proof.pdf",
+        )
+        db.session.add(other_student)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=other_student.id,
+            item_type="Found",
+            title="Found Keys",
+            description="Keys found near the entrance.",
+            location="Entrance",
+            item_date=date.today(),
+            status="Open",
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    response = logged_in_client.post(f"/lost-found/{item_id}/claim")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        assert item.status == "Claimed"
+        assert item.claimant_id == student.id
+
+
+def test_reporter_can_mark_claimed_item_returned(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        other_student = Student(
+            full_name="Claimant Student",
+            email="claimant@gmail.com",
+            password_hash=generate_password_hash("ClaimPass123!"),
+            contact_number="9876543214",
+            srn="CLAIM123",
+            parent_name="Claimant Parent",
+            parent_contact_number="9876543215",
+            hostel_name="Test Hostel",
+            room_number="103",
+            id_proof_filename="claimant-proof.pdf",
+        )
+        db.session.add(other_student)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=student.id,
+            item_type="Found",
+            title="Silver Keys",
+            description="Keys found in the hallway.",
+            location="Hallway",
+            item_date=date.today(),
+            status="Claimed",
+            claimant_id=other_student.id,
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    response = logged_in_client.post(f"/lost-found/{item_id}/return")
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Returned"
+
+
+# Lost and Found edge-case tests
+
+def test_cannot_claim_own_item(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        item = LostFoundItem(
+            student_id=student.id,
+            item_type="Found",
+            title="My Own Item",
+            description="Own item description",
+            location="Library",
+            item_date=date.today(),
+            status="Open",
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    logged_in_client.post(f"/lost-found/{item_id}/claim")
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Open"
+        assert item.claimant_id is None
+
+
+def test_cannot_claim_already_claimed_item(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        other = Student(
+            full_name="Other Student",
+            email="other@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="other-proof.pdf",
+        )
+        db.session.add(other)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=other.id,
+            item_type="Found",
+            title="Already Claimed Item",
+            description="Test description",
+            location="Library",
+            item_date=date.today(),
+            status="Claimed",
+            claimant_id=other.id,
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+        other_id = other.id
+
+    logged_in_client.post(f"/lost-found/{item_id}/claim")
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Claimed"
+        assert item.claimant_id == other_id
+
+
+def test_cannot_claim_lost_item(logged_in_client, app):
+    with app.app_context():
+        other = Student(
+            full_name="Other Student",
+            email="other@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="other-proof.pdf",
+        )
+        db.session.add(other)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=other.id,
+            item_type="Lost",
+            title="Lost Item",
+            description="Test description",
+            location="Library",
+            item_date=date.today(),
+            status="Open",
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    logged_in_client.post(f"/lost-found/{item_id}/claim")
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Open"
+        assert item.claimant_id is None
+
+
+def test_only_reporter_can_mark_item_returned(logged_in_client, app):
+    with app.app_context():
+        other = Student(
+            full_name="Other Student",
+            email="other@gmail.com",
+            password_hash=generate_password_hash("OtherPass123!"),
+            contact_number="9876543212",
+            srn="OTHER123",
+            parent_name="Other Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="other-proof.pdf",
+        )
+        db.session.add(other)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=other.id,
+            item_type="Found",
+            title="Claimed Item",
+            description="Test description",
+            location="Library",
+            item_date=date.today(),
+            status="Claimed",
+            claimant_id=Student.query.filter_by(
+                email="student@gmail.com"
+            ).first().id,
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    logged_in_client.post(f"/lost-found/{item_id}/return")
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Claimed"
+
+
+def test_report_rejects_invalid_fields_and_date(logged_in_client, app):
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Invalid",
+            "title": "",
+            "description": "",
+            "location": "",
+            "item_date": "not-a-date",
+        },
+    )
+    assert response.status_code == 400
+
+    with app.app_context():
+        assert LostFoundItem.query.count() == 0
+
+
+def test_report_rejects_invalid_image_content(logged_in_client, app):
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Found",
+            "title": "Invalid Image",
+            "description": "Image validation test",
+            "location": "Library",
+            "item_date": date.today().isoformat(),
+            "photo": (BytesIO(b"not an actual image"), "photo.jpg"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+
+    with app.app_context():
+        assert LostFoundItem.query.count() == 0
+
+
+def test_report_rejects_oversized_image(logged_in_client, app):
+    from app import MAX_FILE_SIZE
+
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Found",
+            "title": "Oversized Image",
+            "description": "Image size validation test",
+            "location": "Library",
+            "item_date": date.today().isoformat(),
+            "photo": (BytesIO(b"\xff\xd8\xff" + b"x" * MAX_FILE_SIZE), "photo.jpg"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code in (400, 413)
+
+    with app.app_context():
+        assert LostFoundItem.query.count() == 0
+
+
+def test_lost_found_filters_by_type_and_status(logged_in_client, app):
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        db.session.add_all([
+            LostFoundItem(
+                student_id=student.id,
+                item_type="Found",
+                title="Open Found Item",
+                description="Found description",
+                location="Library",
+                item_date=date.today(),
+                status="Open",
+            ),
+            LostFoundItem(
+                student_id=student.id,
+                item_type="Lost",
+                title="Returned Lost Item",
+                description="Lost description",
+                location="Cafeteria",
+                item_date=date.today(),
+                status="Returned",
+            ),
+        ])
+        db.session.commit()
+
+    response = logged_in_client.get(
+        "/lost-found/?type=Found&status=Open"
+    )
+    assert response.status_code == 200
+    assert b"Open Found Item" in response.data
+    assert b"Returned Lost Item" not in response.data
+
+
+def test_report_database_failure_rolls_back(logged_in_client, app, monkeypatch):
+    from sqlalchemy.exc import SQLAlchemyError
+
+    def fail_commit():
+        raise SQLAlchemyError("Simulated report failure")
+
+    monkeypatch.setattr(db.session, "commit", fail_commit)
+
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Found",
+            "title": "Database Failure Item",
+            "description": "Test rollback",
+            "location": "Library",
+            "item_date": date.today().isoformat(),
+        },
+    )
+
+    assert response.status_code == 500
+
+    with app.app_context():
+        assert LostFoundItem.query.filter_by(
+            title="Database Failure Item"
+        ).first() is None
+
+
+def test_claim_database_failure_rolls_back(logged_in_client, app, monkeypatch):
+    from sqlalchemy.exc import SQLAlchemyError
+
+    with app.app_context():
+        reporter = Student(
+            full_name="Reporter Student",
+            email="reporter@gmail.com",
+            password_hash=generate_password_hash("ReporterPass123!"),
+            contact_number="9876543212",
+            srn="REPORT123",
+            parent_name="Reporter Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="reporter-proof.pdf",
+        )
+        db.session.add(reporter)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=reporter.id,
+            item_type="Found",
+            title="Claim Failure Item",
+            description="Test claim rollback",
+            location="Library",
+            item_date=date.today(),
+            status="Open",
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    def fail_commit():
+        raise SQLAlchemyError("Simulated claim failure")
+
+    monkeypatch.setattr(db.session, "commit", fail_commit)
+    logged_in_client.post(f"/lost-found/{item_id}/claim")
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Open"
+        assert item.claimant_id is None
+
+
+def test_return_database_failure_rolls_back(logged_in_client, app, monkeypatch):
+    from sqlalchemy.exc import SQLAlchemyError
+
+    with app.app_context():
+        student = Student.query.filter_by(email="student@gmail.com").first()
+        claimant = Student(
+            full_name="Claimant Student",
+            email="claimant@gmail.com",
+            password_hash=generate_password_hash("ClaimPass123!"),
+            contact_number="9876543214",
+            srn="CLAIM123",
+            parent_name="Claimant Parent",
+            parent_contact_number="9876543215",
+            hostel_name="Test Hostel",
+            room_number="103",
+            id_proof_filename="claimant-proof.pdf",
+        )
+        db.session.add(claimant)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=student.id,
+            item_type="Found",
+            title="Return Failure Item",
+            description="Test return rollback",
+            location="Library",
+            item_date=date.today(),
+            status="Claimed",
+            claimant_id=claimant.id,
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    def fail_commit():
+        raise SQLAlchemyError("Simulated return failure")
+
+    monkeypatch.setattr(db.session, "commit", fail_commit)
+    logged_in_client.post(f"/lost-found/{item_id}/return")
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Claimed"
+
+
+def test_report_accepts_valid_jpeg_signature(logged_in_client, app):
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Found",
+            "title": "JPEG Upload Test",
+            "description": "Testing JPEG signature validation",
+            "location": "Library",
+            "item_date": date.today().isoformat(),
+            "photo": (
+                BytesIO(bytes([0xFF, 0xD8, 0xFF, 0xE0, 0, 0, 0, 0])),
+                "test.jpg",
+            ),
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 302
+
+    with app.app_context():
+        item = LostFoundItem.query.filter_by(title="JPEG Upload Test").first()
+        assert item is not None
+        assert item.photo_filename.endswith(".jpg")
+
+
+def test_item_cannot_be_claimed_twice(logged_in_client, app):
+    with app.app_context():
+        reporter = Student(
+            full_name="Reporter Student",
+            email="reporter@gmail.com",
+            password_hash=generate_password_hash("ReporterPass123!"),
+            contact_number="9876543212",
+            srn="REPORT123",
+            parent_name="Reporter Parent",
+            parent_contact_number="9876543213",
+            hostel_name="Test Hostel",
+            room_number="102",
+            id_proof_filename="reporter-proof.pdf",
+        )
+        db.session.add(reporter)
+        db.session.commit()
+
+        item = LostFoundItem(
+            student_id=reporter.id,
+            item_type="Found",
+            title="Single Claim Item",
+            description="Only one claim should succeed",
+            location="Library",
+            item_date=date.today(),
+            status="Open",
+        )
+        db.session.add(item)
+        db.session.commit()
+        item_id = item.id
+
+    first_response = logged_in_client.post(f"/lost-found/{item_id}/claim")
+    second_response = logged_in_client.post(f"/lost-found/{item_id}/claim")
+
+    assert first_response.status_code == 302
+    assert second_response.status_code == 302
+
+    with app.app_context():
+        item = db.session.get(LostFoundItem, item_id)
+        assert item.status == "Claimed"
+        assert item.claimant_id is not None
+
+
+def test_report_accepts_valid_png_signature(logged_in_client, app):
+    response = logged_in_client.post(
+        "/lost-found/report",
+        data={
+            "item_type": "Found",
+            "title": "PNG Test Item",
+            "description": "Testing PNG upload",
+            "location": "Library",
+            "item_date": date.today().isoformat(),
+            "photo": (BytesIO(bytes([
+                0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
+            ]) + b"test-image-data"), "test.png"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        item = db.session.query(LostFoundItem).filter_by(
+            title="PNG Test Item"
+        ).first()
+        assert item is not None
+        assert item.photo_filename.endswith(".png")
