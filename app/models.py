@@ -1,11 +1,9 @@
-
 from datetime import datetime, timezone
 
 from flask_login import UserMixin
 from sqlalchemy import CheckConstraint
 
 from app import db
-
 
 class Student(UserMixin, db.Model):
     __tablename__ = "students"
@@ -21,7 +19,6 @@ class Student(UserMixin, db.Model):
     hostel_name = db.Column(db.String(100), nullable=False)
     room_number = db.Column(db.String(20), nullable=False)
     id_proof_filename = db.Column(db.String(255), nullable=False)
-
 
 class Fee(db.Model):
     __tablename__ = "fees"
@@ -48,7 +45,6 @@ class Fee(db.Model):
 
     student = db.relationship("Student", backref="fees")
     payments = db.relationship("Payment", back_populates="fee")
-
 
 class Payment(db.Model):
     __tablename__ = "payments"
@@ -98,7 +94,6 @@ class Payment(db.Model):
     fee = db.relationship("Fee", back_populates="payments")
     student = db.relationship("Student", backref="payments")
 
-
 class LaundryRequest(db.Model):
     __tablename__ = "laundry_requests"
 
@@ -144,7 +139,6 @@ class LaundryRequest(db.Model):
             "created_at": self.created_at.isoformat(),
         }
 
-
 class LeaveApplication(db.Model):
     __tablename__ = "leave_applications"
 
@@ -172,7 +166,6 @@ class LeaveApplication(db.Model):
     )
 
     student = db.relationship("Student", backref="leave_applications")
-
 
 class Room(db.Model):
     __tablename__ = "rooms"
@@ -211,7 +204,6 @@ class Room(db.Model):
     def available_beds(self):
         return self.capacity - self.occupied_beds
 
-
 COMPLAINT_CATEGORIES = (
     "Room Maintenance",
     "Electrical",
@@ -224,10 +216,8 @@ COMPLAINT_CATEGORIES = (
 COMPLAINT_PRIORITIES = ("Low", "Medium", "High")
 COMPLAINT_STATUSES = ("Open", "In Progress", "Resolved")
 
-
 def _sql_list(values):
     return ", ".join(f"'{value}'" for value in values)
-
 
 class Complaint(db.Model):
     __tablename__ = "complaints"
@@ -278,7 +268,6 @@ class Complaint(db.Model):
 
     student = db.relationship("Student", backref="complaints")
 
-
 class CommonFacility(db.Model):
     __tablename__ = "common_facilities"
     __table_args__ = (
@@ -304,7 +293,6 @@ class CommonFacility(db.Model):
         back_populates="facility",
         cascade="all, delete-orphan",
     )
-
 
 class FacilityBooking(db.Model):
     __tablename__ = "facility_bookings"
@@ -371,7 +359,6 @@ class Announcement(db.Model):
     )
     expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
-
 class MessMenu(db.Model):
     __tablename__ = "mess_menu"
     __table_args__ = (
@@ -397,7 +384,6 @@ class MessMenu(db.Model):
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     is_available = db.Column(db.Boolean, nullable=False, default=True)
-
 
 class MealRegistration(db.Model):
     __tablename__ = "meal_registrations"
@@ -431,7 +417,6 @@ class MealRegistration(db.Model):
     student = db.relationship("Student", backref="meal_registrations")
     menu = db.relationship("MessMenu", backref="registrations")
 
-
 class MessAttendance(db.Model):
     __tablename__ = "mess_attendance"
     __table_args__ = (
@@ -464,7 +449,6 @@ class MessAttendance(db.Model):
 
     student = db.relationship("Student", backref="mess_attendance")
 
-
 class MessFeedback(db.Model):
     __tablename__ = "mess_feedback"
     __table_args__ = (
@@ -491,7 +475,6 @@ class MessFeedback(db.Model):
 
     student = db.relationship("Student", backref="mess_feedback")
 
-
 class MessHoliday(db.Model):
     __tablename__ = "mess_holidays"
 
@@ -499,7 +482,6 @@ class MessHoliday(db.Model):
     holiday_date = db.Column(db.Date, unique=True, nullable=False, index=True)
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.String(500), nullable=True)
-
 
 class MessFee(db.Model):
     __tablename__ = "mess_fees"
@@ -533,7 +515,6 @@ class MessFee(db.Model):
 
     student = db.relationship("Student", backref="mess_fees")
 
-
 class Warden(UserMixin, db.Model):
     """A separate authentication identity for hostel wardens."""
     __tablename__ = "wardens"
@@ -549,7 +530,6 @@ class Warden(UserMixin, db.Model):
 
     def get_id(self):
         return f"warden:{self.id}"
-
 
 class LostFoundItem(db.Model):
     __tablename__ = "lost_found_items"

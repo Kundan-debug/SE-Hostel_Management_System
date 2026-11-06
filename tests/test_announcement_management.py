@@ -46,7 +46,6 @@ def test_students_can_view_announcements(logged_in_client):
     db.session.add(Announcement(title="Welcome",message="Term starts Monday",category="General")); db.session.commit()
     assert b"Welcome" in logged_in_client.get("/announcements/").data
 
-
 @pytest.mark.parametrize("action", ["edit", "delete"])
 def test_student_cannot_modify_announcement(logged_in_client, action):
     a = Announcement(title="Protected", message="Keep", category="General")
@@ -59,7 +58,6 @@ def test_student_cannot_modify_announcement(logged_in_client, action):
     assert saved is not None
     assert saved.title == "Protected"
 
-
 @pytest.mark.parametrize("expiry", ["2020-01-01T00:00", "not-a-date"])
 def test_create_rejects_invalid_expiry(logged_in_warden, expiry):
     response = logged_in_warden.post("/announcements/manage", data={
@@ -68,7 +66,6 @@ def test_create_rejects_invalid_expiry(logged_in_warden, expiry):
     })
     assert response.status_code in (200, 400)
     assert Announcement.query.count() == 0
-
 
 @pytest.mark.parametrize("expiry", ["2020-01-01T00:00", "not-a-date"])
 def test_edit_rejects_invalid_expiry_without_changing_record(logged_in_warden, expiry):
@@ -107,7 +104,6 @@ def test_student_cannot_edit_announcement(logged_in_client):
 
     assert response.status_code == 403
     assert announcement.title == "Original"
-
 
 def test_student_cannot_delete_announcement(logged_in_client):
     announcement = Announcement(

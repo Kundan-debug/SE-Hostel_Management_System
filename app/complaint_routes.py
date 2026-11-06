@@ -27,12 +27,10 @@ complaint_bp = Blueprint("complaint", __name__, url_prefix="/complaints")
 MIN_DESCRIPTION_LENGTH = 10
 MAX_DESCRIPTION_LENGTH = 1000
 
-
 def complaint_folder():
     folder = Path(current_app.config["UPLOAD_FOLDER"]) / "complaints"
     folder.mkdir(parents=True, exist_ok=True)
     return folder
-
 
 def validate_attachment(attachment):
     """Return (error, original_name, extension) for an optional upload."""
@@ -54,7 +52,6 @@ def validate_attachment(attachment):
 
     attachment.seek(0)
     return None, original_name, extension
-
 
 def render_complaints(status_filter="", form_data=None, http_status=200):
     query = Complaint.query.filter_by(student_id=current_user.id)
@@ -79,7 +76,6 @@ def render_complaints(status_filter="", form_data=None, http_status=200):
         form_data=form_data or {},
         max_description=MAX_DESCRIPTION_LENGTH,
     ), http_status
-
 
 @complaint_bp.route("/", methods=["GET", "POST"])
 @login_required
@@ -162,7 +158,6 @@ def submit_complaint():
 
     flash("Complaint submitted successfully.", "success")
     return redirect(url_for("complaint.submit_complaint"))
-
 
 @complaint_bp.route("/<int:complaint_id>/attachment")
 @login_required

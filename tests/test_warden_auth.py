@@ -6,7 +6,6 @@ from werkzeug.security import generate_password_hash
 from app import db
 from app.models import Warden
 
-
 @pytest.fixture
 def warden(app):
     item = Warden(
@@ -18,7 +17,6 @@ def warden(app):
     db.session.commit()
     return item
 
-
 def test_warden_login_redirects_to_dashboard(client, warden):
     response = client.post(
         "/login",
@@ -26,7 +24,6 @@ def test_warden_login_redirects_to_dashboard(client, warden):
     )
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/warden/")
-
 
 def test_warden_session_persists_across_requests(client, warden):
     client.post(
@@ -37,16 +34,13 @@ def test_warden_session_persists_across_requests(client, warden):
     assert response.status_code == 200
     assert b"Warden Dashboard" in response.data
 
-
 def test_student_cannot_access_warden_dashboard(logged_in_client):
     assert logged_in_client.get("/warden/").status_code == 403
-
 
 def test_unauthenticated_user_cannot_access_warden_dashboard(client):
     response = client.get("/warden/")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_warden_wrong_password_rejected(client, warden):
     response = client.post(
@@ -55,11 +49,9 @@ def test_warden_wrong_password_rejected(client, warden):
     )
     assert response.status_code == 401
 
-
 def test_warden_table_is_registered_in_metadata(app):
     assert "wardens" in db.metadata.tables
     assert db.metadata.tables["wardens"] is Warden.__table__
-
 
 def test_warden_can_view_all_fee_records(client, app, warden):
     from datetime import date
@@ -86,7 +78,6 @@ def test_warden_can_view_all_fee_records(client, app, warden):
     assert response.status_code == 200
     assert b"Hostel Fee" in response.data
     assert b"Test Student" in response.data
-
 
 def test_warden_can_create_fee_record(client, app, warden):
     from app.models import Fee, Student
@@ -119,17 +110,14 @@ def test_warden_can_create_fee_record(client, app, warden):
         assert fee.status == "Due"
         assert fee.amount == Decimal("500.00")
 
-
 def test_student_cannot_access_warden_fee_records(logged_in_client):
     response = logged_in_client.get("/warden/fees")
     assert response.status_code == 403
-
 
 def test_unauthenticated_user_cannot_access_warden_fee_records(client):
     response = client.get("/warden/fees")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_warden_rejects_invalid_fee_amount(client, app, warden):
     from app.models import Fee
@@ -153,7 +141,6 @@ def test_warden_rejects_invalid_fee_amount(client, app, warden):
     assert response.status_code == 200
     with app.app_context():
         assert Fee.query.filter_by(description="Invalid Fee").first() is None
-
 
 def test_warden_rejects_nonexistent_student(client, app, warden):
     from app.models import Fee
@@ -181,7 +168,6 @@ def test_warden_rejects_nonexistent_student(client, app, warden):
             is None
         )
 
-
 def test_warden_cannot_view_receipt_for_missing_payment(client, warden):
     client.post(
         "/login",
@@ -189,7 +175,6 @@ def test_warden_cannot_view_receipt_for_missing_payment(client, warden):
     )
     response = client.get("/warden/fees/receipts/99999")
     assert response.status_code == 404
-
 
 def test_warden_cannot_view_receipt_for_unsuccessful_payment(
     client, app, warden
@@ -227,7 +212,6 @@ def test_warden_cannot_view_receipt_for_unsuccessful_payment(
     response = client.get(f"/warden/fees/receipts/{payment_id}")
     assert response.status_code == 404
 
-
 def _create_leave_application(app):
     from datetime import date
     from app.models import LeaveApplication, Student
@@ -246,13 +230,11 @@ def _create_leave_application(app):
         db.session.commit()
         return application.id
 
-
 def _login_warden(client, warden):
     return client.post(
         "/login",
         data={"email": warden.email, "password": "WardenPass123!"},
     )
-
 
 def test_warden_can_view_leave_requests(client, app, warden):
     _create_leave_application(app)
@@ -262,7 +244,6 @@ def test_warden_can_view_leave_requests(client, app, warden):
     assert response.status_code == 200
     assert b"Family function" in response.data
     assert b"Pending" in response.data
-
 
 @pytest.mark.parametrize("decision", ["Approved", "Rejected"])
 def test_warden_can_decide_pending_leave_request(
@@ -286,7 +267,6 @@ def test_warden_can_decide_pending_leave_request(
         application = db.session.get(LeaveApplication, application_id)
         assert application.status == decision
 
-
 def test_warden_rejects_invalid_leave_decision(client, app, warden):
     from app.models import LeaveApplication
 
@@ -302,7 +282,6 @@ def test_warden_rejects_invalid_leave_decision(client, app, warden):
     with app.app_context():
         application = db.session.get(LeaveApplication, application_id)
         assert application.status == "Pending"
-
 
 def test_warden_cannot_change_decided_leave_request(client, app, warden):
     from app.models import LeaveApplication
@@ -324,17 +303,14 @@ def test_warden_cannot_change_decided_leave_request(client, app, warden):
         application = db.session.get(LeaveApplication, application_id)
         assert application.status == "Approved"
 
-
 def test_student_cannot_access_warden_leave_requests(logged_in_client):
     response = logged_in_client.get("/warden/leave-requests")
     assert response.status_code == 403
-
 
 def test_unauthenticated_user_cannot_access_warden_leave_requests(client):
     response = client.get("/warden/leave-requests")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_leave_decision_commit_failure_rolls_back(
     client, app, warden, monkeypatch
@@ -368,7 +344,6 @@ def test_leave_decision_commit_failure_rolls_back(
             "/warden/leave-requests", follow_redirects=True
         ).data
 
-
 def test_warden_leave_decision_requires_csrf_token(client, app, warden):
     _login_warden(client, warden)
     app.config["WTF_CSRF_ENABLED"] = True
@@ -379,17 +354,14 @@ def test_warden_leave_decision_requires_csrf_token(client, app, warden):
     )
     assert response.status_code == 400
 
-
 def test_unauthenticated_user_cannot_access_warden_complaints(client):
     response = client.get("/warden/complaints")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
-
 def test_student_cannot_access_warden_complaints(logged_in_client):
     response = logged_in_client.get("/warden/complaints")
     assert response.status_code == 403
-
 
 def test_warden_can_view_complaints(client, app, warden):
     from app.models import Complaint, Student
@@ -413,7 +385,6 @@ def test_warden_can_view_complaints(client, app, warden):
     assert response.status_code == 200
     assert b"Fan is not working" in response.data
     assert b"Test Student" in response.data
-
 
 def test_warden_can_update_complaint(client, app, warden):
     from app.models import Complaint, Student
@@ -446,7 +417,6 @@ def test_warden_can_update_complaint(client, app, warden):
         complaint = db.session.get(Complaint, complaint_id)
         assert complaint.status == "Resolved"
         assert complaint.priority == "High"
-
 
 def test_warden_rejects_invalid_complaint_status(client, app, warden):
     from app.models import Complaint, Student

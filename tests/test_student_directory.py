@@ -29,6 +29,5 @@ def test_student_search_returns_no_unrelated_records(app, client):
     assert r.status_code == 200 and b"No students found" in r.data
 
 def test_missing_student_profile_returns_404(client):
-    # A logged-in warden is required before the detail route can be tested.
     log_in_warden(client)
     assert client.get("/warden/students/99999").status_code == 404

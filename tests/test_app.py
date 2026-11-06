@@ -1,4 +1,3 @@
-
 import pytest
 from io import BytesIO
 from datetime import datetime
@@ -25,7 +24,6 @@ from app.models import (
     MessFee,
     LostFoundItem,
 )
-
 
 @pytest.fixture
 def app():
@@ -59,11 +57,9 @@ def app():
         db.session.remove()
         db.drop_all()
 
-
 @pytest.fixture
 def client(app):
     return app.test_client()
-
 
 @pytest.fixture
 def logged_in_client(client):
@@ -76,10 +72,6 @@ def logged_in_client(client):
     )
     return client
 
-
-# Home and authentication tests
-
-
 def test_home_endpoint(logged_in_client):
     response = logged_in_client.get("/")
 
@@ -91,7 +83,6 @@ def test_home_endpoint(logged_in_client):
     assert b"Leave Applications" in response.data
     assert b"Common Facilities" in response.data
 
-
 def test_security_headers(logged_in_client):
     response = logged_in_client.get("/")
 
@@ -99,13 +90,11 @@ def test_security_headers(logged_in_client):
     assert response.headers["X-Frame-Options"] == "SAMEORIGIN"
     assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
 
-
 def test_login_page_loads(client):
     response = client.get("/login")
 
     assert response.status_code == 200
     assert b"Student Login" in response.data
-
 
 def test_login_with_correct_credentials(client):
     response = client.post(
@@ -119,7 +108,6 @@ def test_login_with_correct_credentials(client):
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/room-details/")
 
-
 def test_login_with_incorrect_password(client):
     response = client.post(
         "/login",
@@ -131,7 +119,6 @@ def test_login_with_incorrect_password(client):
 
     assert response.status_code == 401
     assert b"Invalid email or password." in response.data
-
 
 def test_login_with_unknown_email(client):
     response = client.post(
@@ -145,13 +132,11 @@ def test_login_with_unknown_email(client):
     assert response.status_code == 401
     assert b"Invalid email or password." in response.data
 
-
 def test_logout_requires_login(client):
     response = client.post("/logout")
 
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_logout_after_login(logged_in_client):
     response = logged_in_client.post("/logout")
@@ -159,15 +144,11 @@ def test_logout_after_login(logged_in_client):
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/login")
 
-
-# Fees and payments tests
-
 def test_fees_page_requires_login(client):
     response = client.get("/fees")
 
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_student_can_view_own_fees(client, app):
     with app.app_context():
@@ -198,7 +179,6 @@ def test_student_can_view_own_fees(client, app):
     assert response.status_code == 200
     assert b"Hostel Fee" in response.data
     assert b"Outstanding balance" in response.data
-
 
 def test_simulated_payment_creates_history_and_receipt(client, app):
     with app.app_context():
@@ -243,7 +223,6 @@ def test_simulated_payment_creates_history_and_receipt(client, app):
 
     assert response.status_code == 200
     assert b"DEMO RECEIPT" in response.data
-
 
 def test_student_cannot_pay_another_students_fee(client, app):
     with app.app_context():
@@ -290,9 +269,6 @@ def test_student_cannot_pay_another_students_fee(client, app):
         assert fee.status == "Due"
         assert Payment.query.filter_by(fee_id=fee_id).count() == 0
 
-
-# Laundry API tests
-
 def valid_laundry_request():
     return {
         "item_details": "2 shirts, 1 bedsheet",
@@ -300,11 +276,9 @@ def valid_laundry_request():
         "pickup_date": "2026-10-22",
     }
 
-
 def test_laundry_requires_login(client):
     response = client.get("/api/laundry")
     assert response.status_code == 302
-
 
 def test_create_laundry_request(logged_in_client):
     response = logged_in_client.post(
@@ -316,14 +290,12 @@ def test_create_laundry_request(logged_in_client):
     assert response.get_json()["student_id"] == "1"
     assert response.get_json()["status"] == "pending"
 
-
 def test_reject_invalid_laundry_quantity(logged_in_client):
     payload = valid_laundry_request()
     payload["quantity"] = 0
 
     response = logged_in_client.post("/api/laundry", json=payload)
     assert response.status_code == 400
-
 
 def test_student_cannot_choose_another_student_id(logged_in_client):
     payload = valid_laundry_request()
@@ -334,14 +306,12 @@ def test_student_cannot_choose_another_student_id(logged_in_client):
     assert response.status_code == 201
     assert response.get_json()["student_id"] == "1"
 
-
 def test_student_cannot_set_charges_or_payment(logged_in_client):
     payload = valid_laundry_request()
     payload["charges"] = 150.00
 
     response = logged_in_client.post("/api/laundry", json=payload)
     assert response.status_code == 400
-
 
 def test_list_laundry_history(logged_in_client):
     logged_in_client.post(
@@ -355,7 +325,6 @@ def test_list_laundry_history(logged_in_client):
     items = response.get_json()
     assert len(items) == 1
     assert items[0]["student_id"] == "1"
-
 
 def test_student_cannot_change_laundry_status_or_payment(
     logged_in_client,
@@ -373,7 +342,6 @@ def test_student_cannot_change_laundry_status_or_payment(
 
     assert response.status_code == 403
 
-
 def test_student_can_cancel_own_pending_request(logged_in_client):
     created = logged_in_client.post(
         "/api/laundry",
@@ -389,13 +357,9 @@ def test_student_can_cancel_own_pending_request(logged_in_client):
     assert response.status_code == 200
     assert response.get_json()["status"] == "cancelled"
 
-
 def test_laundry_request_not_found(logged_in_client):
     response = logged_in_client.get("/api/laundry/999")
     assert response.status_code == 404
-
-
-# Apply for Leave tests
 
 def valid_leave_form():
     start = date.today() + timedelta(days=2)
@@ -408,18 +372,15 @@ def valid_leave_form():
         "reason": "Visiting family",
     }
 
-
 def test_leave_page_requires_login(client):
     response = client.get("/leave/")
 
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
-
 def test_leave_page_loads_for_logged_in_student(logged_in_client):
     response = logged_in_client.get("/leave/")
     assert response.status_code == 200
-
 
 def test_student_can_apply_for_leave(logged_in_client, app):
     response = logged_in_client.post(
@@ -436,7 +397,6 @@ def test_student_can_apply_for_leave(logged_in_client, app):
         assert application.reason == "Visiting family"
         assert application.status == "Pending"
 
-
 def test_leave_rejects_invalid_leave_type(logged_in_client, app):
     form = valid_leave_form()
     form["leave_type"] = "Invalid"
@@ -445,7 +405,6 @@ def test_leave_rejects_invalid_leave_type(logged_in_client, app):
 
     with app.app_context():
         assert LeaveApplication.query.count() == 0
-
 
 def test_leave_rejects_missing_fields(logged_in_client, app):
     form = valid_leave_form()
@@ -456,7 +415,6 @@ def test_leave_rejects_missing_fields(logged_in_client, app):
     with app.app_context():
         assert LeaveApplication.query.count() == 0
 
-
 def test_leave_rejects_invalid_date_format(logged_in_client, app):
     form = valid_leave_form()
     form["start_date"] = "not-a-date"
@@ -465,7 +423,6 @@ def test_leave_rejects_invalid_date_format(logged_in_client, app):
 
     with app.app_context():
         assert LeaveApplication.query.count() == 0
-
 
 def test_leave_rejects_past_start_date(logged_in_client, app):
     form = valid_leave_form()
@@ -477,7 +434,6 @@ def test_leave_rejects_past_start_date(logged_in_client, app):
 
     with app.app_context():
         assert LeaveApplication.query.count() == 0
-
 
 def test_leave_rejects_end_date_before_start_date(
     logged_in_client, app
@@ -494,7 +450,6 @@ def test_leave_rejects_end_date_before_start_date(
 
     with app.app_context():
         assert LeaveApplication.query.count() == 0
-
 
 def test_student_can_cancel_own_pending_leave(logged_in_client, app):
     logged_in_client.post("/leave/", data=valid_leave_form())
@@ -514,7 +469,6 @@ def test_student_can_cancel_own_pending_leave(logged_in_client, app):
             LeaveApplication, application_id
         )
         assert application.status == "Cancelled"
-
 
 def test_student_cannot_cancel_another_students_leave(
     logged_in_client, app
@@ -559,7 +513,6 @@ def test_student_cannot_cancel_another_students_leave(
         )
         assert application.status == "Pending"
 
-
 def test_student_cannot_cancel_non_pending_leave(
     logged_in_client, app
 ):
@@ -590,9 +543,6 @@ def test_student_cannot_cancel_non_pending_leave(
         )
         assert application.status == "Approved"
 
-
-# Book Common Facility tests
-
 def create_test_facility(app, capacity=2, is_available=True):
     with app.app_context():
         facility = CommonFacility(
@@ -606,7 +556,6 @@ def create_test_facility(app, capacity=2, is_available=True):
         db.session.commit()
         return facility.id
 
-
 def valid_facility_booking(facility_id):
     return {
         "facility_id": facility_id,
@@ -617,18 +566,15 @@ def valid_facility_booking(facility_id):
         "end_time": "11:00",
     }
 
-
 def test_facility_list_requires_login(client):
     response = client.get("/facilities/")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
-
 def test_booking_history_requires_login(client):
     response = client.get("/facilities/bookings")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_create_booking_requires_login(client):
     response = client.post(
@@ -645,7 +591,6 @@ def test_create_booking_requires_login(client):
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
-
 def test_student_can_list_facilities(logged_in_client, app):
     facility_id = create_test_facility(app)
 
@@ -657,7 +602,6 @@ def test_student_can_list_facilities(logged_in_client, app):
     assert facilities[0]["id"] == facility_id
     assert facilities[0]["name"] == "Test Gym"
     assert facilities[0]["is_available"] is True
-
 
 def test_student_can_create_booking(logged_in_client, app):
     facility_id = create_test_facility(app)
@@ -678,7 +622,6 @@ def test_student_can_create_booking(logged_in_client, app):
         assert booking.facility_id == facility_id
         assert booking.status == "Pending"
 
-
 def test_booking_rejects_missing_fields(logged_in_client):
     response = logged_in_client.post(
         "/facilities/bookings",
@@ -686,7 +629,6 @@ def test_booking_rejects_missing_fields(logged_in_client):
     )
 
     assert response.status_code == 400
-
 
 def test_booking_rejects_invalid_date_or_time(logged_in_client):
     response = logged_in_client.post(
@@ -701,7 +643,6 @@ def test_booking_rejects_invalid_date_or_time(logged_in_client):
 
     assert response.status_code == 400
 
-
 def test_booking_rejects_past_date(logged_in_client, app):
     facility_id = create_test_facility(app)
     payload = valid_facility_booking(facility_id)
@@ -715,7 +656,6 @@ def test_booking_rejects_past_date(logged_in_client, app):
     )
 
     assert response.status_code == 400
-
 
 def test_booking_rejects_end_time_before_start_time(
     logged_in_client, app
@@ -732,7 +672,6 @@ def test_booking_rejects_end_time_before_start_time(
 
     assert response.status_code == 400
 
-
 def test_booking_rejects_nonexistent_facility(logged_in_client):
     response = logged_in_client.post(
         "/facilities/bookings",
@@ -740,7 +679,6 @@ def test_booking_rejects_nonexistent_facility(logged_in_client):
     )
 
     assert response.status_code == 404
-
 
 def test_booking_rejects_unavailable_facility(
     logged_in_client, app
@@ -755,7 +693,6 @@ def test_booking_rejects_unavailable_facility(
     )
 
     assert response.status_code == 409
-
 
 def test_booking_rejects_fully_booked_time_slot(
     logged_in_client, app
@@ -775,7 +712,6 @@ def test_booking_rejects_fully_booked_time_slot(
     )
     assert second_response.status_code == 409
 
-
 def test_student_can_view_own_booking_history(
     logged_in_client, app
 ):
@@ -793,7 +729,6 @@ def test_student_can_view_own_booking_history(
     assert len(bookings) == 1
     assert bookings[0]["facility_name"] == "Test Gym"
     assert bookings[0]["status"] == "Pending"
-
 
 def test_student_can_cancel_own_booking(
     logged_in_client, app
@@ -816,7 +751,6 @@ def test_student_can_cancel_own_booking(
     with app.app_context():
         booking = db.session.get(FacilityBooking, booking_id)
         assert booking.status == "Cancelled"
-
 
 def test_student_cannot_cancel_another_students_booking(
     logged_in_client, app
@@ -861,7 +795,6 @@ def test_student_cannot_cancel_another_students_booking(
         booking = db.session.get(FacilityBooking, booking_id)
         assert booking.status == "Pending"
 
-
 def test_student_cannot_cancel_booking_twice(
     logged_in_client, app
 ):
@@ -889,7 +822,6 @@ def test_profile_requires_login(client):
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
 
-
 def test_student_can_view_own_profile(logged_in_client):
     response = logged_in_client.get("/profile/")
 
@@ -897,7 +829,6 @@ def test_student_can_view_own_profile(logged_in_client):
     assert b"Test Student" in response.data
     assert b"student@gmail.com" in response.data
     assert b"Test Hostel" in response.data
-
 
 def test_student_can_update_own_profile(logged_in_client, app):
     response = logged_in_client.post(
@@ -920,7 +851,6 @@ def test_student_can_update_own_profile(logged_in_client, app):
         assert student.full_name == "Updated Student"
         assert student.email == "updated@gmail.com"
 
-
 def test_profile_rejects_invalid_contact_number(logged_in_client, app):
     response = logged_in_client.post(
         "/profile/edit",
@@ -939,7 +869,6 @@ def test_profile_rejects_invalid_contact_number(logged_in_client, app):
     with app.app_context():
         student = Student.query.filter_by(srn="TEST123").first()
         assert student.contact_number == "9876543210"
-
 
 def test_profile_rejects_duplicate_email(logged_in_client, app):
     with app.app_context():
@@ -972,7 +901,6 @@ def test_profile_rejects_duplicate_email(logged_in_client, app):
     assert response.status_code == 400
     assert b"This email is already registered." in response.data
 
-
 def test_profile_photo_rejects_unsupported_extension(logged_in_client):
     response = logged_in_client.post(
         "/profile/photo",
@@ -988,7 +916,6 @@ def test_profile_photo_rejects_unsupported_extension(logged_in_client):
 
     assert response.status_code == 200
     assert b"Upload a JPG, JPEG, or PNG image." in response.data
-
 
 def test_student_can_upload_profile_photo(logged_in_client, app):
     response = logged_in_client.post(
@@ -1015,15 +942,11 @@ def test_student_can_upload_profile_photo(logged_in_client, app):
         assert len(photos) == 1
         assert photos[0].read_bytes() == b"test image content"
 
-
-# Notifications and announcements tests
-
 def test_announcements_require_login(client):
     response = client.get("/announcements/")
 
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_student_can_view_announcements(logged_in_client, app):
     with app.app_context():
@@ -1042,7 +965,6 @@ def test_student_can_view_announcements(logged_in_client, app):
     assert b"Water Supply Maintenance" in response.data
     assert b"Water supply will be interrupted tomorrow." in response.data
     assert b"Maintenance" in response.data
-
 
 def test_announcements_are_ordered_newest_first(
     logged_in_client, app
@@ -1071,7 +993,6 @@ def test_announcements_are_ordered_newest_first(
     newer_position = response.data.index(b"Newer Announcement")
     assert newer_position < older_position
 
-
 def test_expired_announcements_are_hidden(
     logged_in_client, app
 ):
@@ -1098,14 +1019,10 @@ def test_expired_announcements_are_hidden(
     assert b"Current Notice" in response.data
     assert b"Expired Notice" not in response.data
 
-
-# Manage Mess tests
-
 def test_manage_mess_requires_login(client):
     response = client.get("/mess/")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_manage_mess_page_loads(logged_in_client):
     response = logged_in_client.get("/mess/")
@@ -1116,7 +1033,6 @@ def test_manage_mess_page_loads(logged_in_client):
     assert b"Mess Holidays" in response.data
     assert b"Mess Fee Information" in response.data
     assert b"currently unavailable" in response.data
-
 
 def test_student_can_view_weekly_menu(logged_in_client, app):
     with app.app_context():
@@ -1135,7 +1051,6 @@ def test_student_can_view_weekly_menu(logged_in_client, app):
     assert response.status_code == 200
     assert b"Idli, sambar and chutney" in response.data
     assert b"Monday" in response.data
-
 
 def test_student_can_register_for_meal(logged_in_client, app):
     with app.app_context():
@@ -1165,7 +1080,6 @@ def test_student_can_register_for_meal(logged_in_client, app):
             menu_id=menu_id,
         ).first()
         assert registration is not None
-
 
 def test_student_cannot_register_for_same_meal_twice(
     logged_in_client, app
@@ -1200,7 +1114,6 @@ def test_student_cannot_register_for_same_meal_twice(
             menu_id=menu_id,
         ).count() == 1
 
-
 def test_student_cannot_register_for_unavailable_meal(
     logged_in_client, app
 ):
@@ -1231,7 +1144,6 @@ def test_student_cannot_register_for_unavailable_meal(
             menu_id=menu_id,
         ).count() == 0
 
-
 def test_student_can_submit_mess_feedback(logged_in_client, app):
     response = logged_in_client.post(
         "/mess/feedback",
@@ -1251,7 +1163,6 @@ def test_student_can_submit_mess_feedback(logged_in_client, app):
         assert item is not None
         assert item.category == "Feedback"
 
-
 def test_mess_feedback_rejects_invalid_category(logged_in_client, app):
     response = logged_in_client.post(
         "/mess/feedback",
@@ -1264,7 +1175,6 @@ def test_mess_feedback_rejects_invalid_category(logged_in_client, app):
     with app.app_context():
         assert MessFeedback.query.count() == 0
 
-
 def test_mess_feedback_rejects_empty_message(logged_in_client, app):
     response = logged_in_client.post(
         "/mess/feedback",
@@ -1276,7 +1186,6 @@ def test_mess_feedback_rejects_empty_message(logged_in_client, app):
 
     with app.app_context():
         assert MessFeedback.query.count() == 0
-
 
 def test_student_only_sees_own_mess_records(logged_in_client, app):
     with app.app_context():
@@ -1308,27 +1217,21 @@ def test_student_only_sees_own_mess_records(logged_in_client, app):
     assert response.status_code == 200
     assert b"Private complaint" not in response.data
 
-
 def test_missing_secret_key_raises_error(monkeypatch):
     monkeypatch.delenv("SECRET_KEY", raising=False)
 
     with pytest.raises(RuntimeError, match="SECRET_KEY must be set in the environment"):
         create_app()
 
-
-# Lost and Found tests
-
 def test_lost_found_requires_login(client):
     response = client.get("/lost-found/")
     assert response.status_code == 302
     assert "/login" in response.location
 
-
 def test_student_can_view_lost_found(logged_in_client):
     response = logged_in_client.get("/lost-found/")
     assert response.status_code == 200
     assert b"Lost and Found" in response.data
-
 
 def test_student_can_report_found_item(logged_in_client, app):
     response = logged_in_client.post(
@@ -1350,7 +1253,6 @@ def test_student_can_report_found_item(logged_in_client, app):
         assert item.item_type == "Found"
         assert item.status == "Open"
 
-
 def test_student_can_search_lost_found_items(logged_in_client, app):
     with app.app_context():
         student = Student.query.filter_by(email="student@gmail.com").first()
@@ -1371,7 +1273,6 @@ def test_student_can_search_lost_found_items(logged_in_client, app):
 
     assert response.status_code == 200
     assert b"Blue Water Bottle" in response.data
-
 
 def test_student_can_claim_found_item(logged_in_client, app):
     with app.app_context():
@@ -1414,7 +1315,6 @@ def test_student_can_claim_found_item(logged_in_client, app):
         assert item.status == "Claimed"
         assert item.claimant_id == student.id
 
-
 def test_reporter_can_mark_claimed_item_returned(logged_in_client, app):
     with app.app_context():
         student = Student.query.filter_by(email="student@gmail.com").first()
@@ -1455,9 +1355,6 @@ def test_reporter_can_mark_claimed_item_returned(logged_in_client, app):
         item = db.session.get(LostFoundItem, item_id)
         assert item.status == "Returned"
 
-
-# Lost and Found edge-case tests
-
 def test_cannot_claim_own_item(logged_in_client, app):
     with app.app_context():
         student = Student.query.filter_by(email="student@gmail.com").first()
@@ -1480,7 +1377,6 @@ def test_cannot_claim_own_item(logged_in_client, app):
         item = db.session.get(LostFoundItem, item_id)
         assert item.status == "Open"
         assert item.claimant_id is None
-
 
 def test_cannot_claim_already_claimed_item(logged_in_client, app):
     with app.app_context():
@@ -1522,7 +1418,6 @@ def test_cannot_claim_already_claimed_item(logged_in_client, app):
         assert item.status == "Claimed"
         assert item.claimant_id == other_id
 
-
 def test_cannot_claim_lost_item(logged_in_client, app):
     with app.app_context():
         other = Student(
@@ -1559,7 +1454,6 @@ def test_cannot_claim_lost_item(logged_in_client, app):
         item = db.session.get(LostFoundItem, item_id)
         assert item.status == "Open"
         assert item.claimant_id is None
-
 
 def test_only_reporter_can_mark_item_returned(logged_in_client, app):
     with app.app_context():
@@ -1600,7 +1494,6 @@ def test_only_reporter_can_mark_item_returned(logged_in_client, app):
         item = db.session.get(LostFoundItem, item_id)
         assert item.status == "Claimed"
 
-
 def test_report_rejects_invalid_fields_and_date(logged_in_client, app):
     response = logged_in_client.post(
         "/lost-found/report",
@@ -1616,7 +1509,6 @@ def test_report_rejects_invalid_fields_and_date(logged_in_client, app):
 
     with app.app_context():
         assert LostFoundItem.query.count() == 0
-
 
 def test_report_rejects_invalid_image_content(logged_in_client, app):
     response = logged_in_client.post(
@@ -1635,7 +1527,6 @@ def test_report_rejects_invalid_image_content(logged_in_client, app):
 
     with app.app_context():
         assert LostFoundItem.query.count() == 0
-
 
 def test_report_rejects_oversized_image(logged_in_client, app):
     from app import MAX_FILE_SIZE
@@ -1656,7 +1547,6 @@ def test_report_rejects_oversized_image(logged_in_client, app):
 
     with app.app_context():
         assert LostFoundItem.query.count() == 0
-
 
 def test_lost_found_filters_by_type_and_status(logged_in_client, app):
     with app.app_context():
@@ -1690,7 +1580,6 @@ def test_lost_found_filters_by_type_and_status(logged_in_client, app):
     assert b"Open Found Item" in response.data
     assert b"Returned Lost Item" not in response.data
 
-
 def test_report_database_failure_rolls_back(logged_in_client, app, monkeypatch):
     from sqlalchemy.exc import SQLAlchemyError
 
@@ -1716,7 +1605,6 @@ def test_report_database_failure_rolls_back(logged_in_client, app, monkeypatch):
         assert LostFoundItem.query.filter_by(
             title="Database Failure Item"
         ).first() is None
-
 
 def test_claim_database_failure_rolls_back(logged_in_client, app, monkeypatch):
     from sqlalchemy.exc import SQLAlchemyError
@@ -1760,7 +1648,6 @@ def test_claim_database_failure_rolls_back(logged_in_client, app, monkeypatch):
         item = db.session.get(LostFoundItem, item_id)
         assert item.status == "Open"
         assert item.claimant_id is None
-
 
 def test_return_database_failure_rolls_back(logged_in_client, app, monkeypatch):
     from sqlalchemy.exc import SQLAlchemyError
@@ -1806,7 +1693,6 @@ def test_return_database_failure_rolls_back(logged_in_client, app, monkeypatch):
         item = db.session.get(LostFoundItem, item_id)
         assert item.status == "Claimed"
 
-
 def test_report_accepts_valid_jpeg_signature(logged_in_client, app):
     response = logged_in_client.post(
         "/lost-found/report",
@@ -1830,7 +1716,6 @@ def test_report_accepts_valid_jpeg_signature(logged_in_client, app):
         item = LostFoundItem.query.filter_by(title="JPEG Upload Test").first()
         assert item is not None
         assert item.photo_filename.endswith(".jpg")
-
 
 def test_item_cannot_be_claimed_twice(logged_in_client, app):
     with app.app_context():
@@ -1872,7 +1757,6 @@ def test_item_cannot_be_claimed_twice(logged_in_client, app):
         item = db.session.get(LostFoundItem, item_id)
         assert item.status == "Claimed"
         assert item.claimant_id is not None
-
 
 def test_report_accepts_valid_png_signature(logged_in_client, app):
     response = logged_in_client.post(

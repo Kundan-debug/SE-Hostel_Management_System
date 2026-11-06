@@ -6,7 +6,6 @@ from app import db
 from app.models import MessMenu
 from app.warden_routes import warden_required
 
-
 mess_menu_bp = Blueprint(
     "mess_menu",
     __name__,
@@ -18,7 +17,6 @@ WEEKDAYS = [
     "Friday", "Saturday", "Sunday",
 ]
 MEAL_TYPES = ["Breakfast", "Lunch", "Snacks", "Dinner"]
-
 
 @mess_menu_bp.route("/", methods=["GET", "POST"])
 @warden_required
@@ -72,7 +70,6 @@ def manage_menu():
         meal_types=MEAL_TYPES,
     )
 
-
 @mess_menu_bp.route("/<int:menu_id>/update", methods=["POST"])
 @warden_required
 def update_menu(menu_id):
@@ -114,7 +111,6 @@ def update_menu(menu_id):
         flash("Mess menu entry updated.", "success")
 
     return redirect(url_for("mess_menu.manage_menu"))
-
 
 @mess_menu_bp.route("/<int:menu_id>/delete", methods=["POST"])
 @warden_required

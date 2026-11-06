@@ -6,7 +6,6 @@ from werkzeug.security import generate_password_hash
 from app import db
 from app.models import MessMenu, Warden
 
-
 @pytest.fixture
 def warden(app):
     item = Warden(
@@ -18,13 +17,11 @@ def warden(app):
     db.session.commit()
     return item
 
-
 def _login_warden(client, warden):
     return client.post(
         "/login",
         data={"email": warden.email, "password": "WardenPass123!"},
     )
-
 
 def test_warden_can_view_mess_menu(client, warden):
     _login_warden(client, warden)
@@ -32,17 +29,14 @@ def test_warden_can_view_mess_menu(client, warden):
     assert response.status_code == 200
     assert b"Manage Mess Menu" in response.data
 
-
 def test_student_cannot_access_mess_menu(logged_in_client):
     response = logged_in_client.get("/warden/mess-menu/")
     assert response.status_code == 403
-
 
 def test_unauthenticated_user_cannot_access_mess_menu(client):
     response = client.get("/warden/mess-menu/")
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
 
 def test_warden_can_create_mess_menu(client, app, warden):
     from app.models import MessMenu
@@ -67,7 +61,6 @@ def test_warden_can_create_mess_menu(client, app, warden):
         ).one()
         assert menu.menu_items == "Idli and sambar"
         assert menu.is_available is True
-
 
 def test_warden_cannot_create_duplicate_mess_menu(client, app, warden):
     from datetime import time
@@ -100,7 +93,6 @@ def test_warden_cannot_create_duplicate_mess_menu(client, app, warden):
     )
     assert response.status_code == 200
     assert b"already exists" in response.data
-
 
 def test_warden_can_update_mess_menu(client, app, warden):
     from datetime import time
@@ -138,7 +130,6 @@ def test_warden_can_update_mess_menu(client, app, warden):
         assert menu.menu_items == "Idli and chutney"
         assert menu.is_available is True
 
-
 def test_warden_can_delete_unregistered_mess_menu(client, app, warden):
     from datetime import time
     from app import db
@@ -163,7 +154,6 @@ def test_warden_can_delete_unregistered_mess_menu(client, app, warden):
     with app.app_context():
         assert db.session.get(MessMenu, menu_id) is None
 
-
 def test_warden_rejects_invalid_weekday_and_meal_type(client, warden):
     _login_warden(client, warden)
     response = client.post(
@@ -180,7 +170,6 @@ def test_warden_rejects_invalid_weekday_and_meal_type(client, warden):
     assert response.status_code == 200
     assert b"Choose a valid day and meal type." in response.data
 
-
 def test_warden_rejects_empty_menu_items(client, warden):
     _login_warden(client, warden)
     response = client.post(
@@ -196,7 +185,6 @@ def test_warden_rejects_empty_menu_items(client, warden):
     )
     assert response.status_code == 200
     assert b"Menu items are required" in response.data
-
 
 def test_warden_rejects_invalid_or_reversed_meal_timings(client, warden):
     _login_warden(client, warden)
@@ -228,7 +216,6 @@ def test_warden_rejects_invalid_or_reversed_meal_timings(client, warden):
     )
     assert response.status_code == 200
     assert b"The end time must be later than the start time." in response.data
-
 
 def test_warden_cannot_update_menu_to_duplicate_day_and_meal(
     client, app, warden
@@ -272,7 +259,6 @@ def test_warden_cannot_update_menu_to_duplicate_day_and_meal(
         second = db.session.get(MessMenu, second_id)
         assert second.day_of_week == "Tuesday"
         assert second.meal_type == "Lunch"
-
 
 def test_warden_cannot_delete_menu_with_registrations(client, app, warden):
     from app.models import MealRegistration, Student
@@ -319,7 +305,6 @@ def test_warden_cannot_delete_menu_with_registrations(client, app, warden):
     with app.app_context():
         assert db.session.get(MessMenu, menu_id) is not None
         assert MealRegistration.query.filter_by(menu_id=menu_id).count() == 1
-
 
 def test_warden_can_mark_mess_menu_unavailable(client, app, warden):
     with app.app_context():

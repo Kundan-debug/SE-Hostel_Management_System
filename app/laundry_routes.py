@@ -1,4 +1,3 @@
-
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
@@ -17,9 +16,6 @@ VALID_STATUSES = {"pending", "processing", "ready", "delivered", "cancelled"}
 def laundry_page():
     return render_template("laundry.html")
 
-
-
-
 def parse_date(value, field_name, required=False):
     if value is None or value == "":
         if required:
@@ -34,10 +30,8 @@ def parse_date(value, field_name, required=False):
     except ValueError:
         raise ValueError(f"{field_name} must use YYYY-MM-DD format")
 
-
 def error(message, status):
     return jsonify({"error": message}), status
-
 
 def owned_request(request_id):
     item = db.session.get(LaundryRequest, request_id)
@@ -50,7 +44,6 @@ def owned_request(request_id):
 
     return item, None
 
-
 @laundry_bp.route("", methods=["POST"])
 @login_required
 def create_laundry_request():
@@ -59,8 +52,6 @@ def create_laundry_request():
     if not isinstance(data, dict):
         return error("A JSON object is required", 400)
 
-    # Student identity comes from the authenticated session.
-    # Never trust a student_id supplied by the request body.
     item_details = data.get("item_details")
 
     if not isinstance(item_details, str) or not item_details.strip():
@@ -87,7 +78,6 @@ def create_laundry_request():
     except ValueError as exc:
         return error(str(exc), 400)
 
-    # Charges and payment status must be set by an authorized workflow.
     if "charges" in data or "payment_status" in data:
         return error("Charges and payment status cannot be set by students", 400)
 
@@ -104,7 +94,6 @@ def create_laundry_request():
 
     return jsonify(item.to_dict()), 201
 
-
 @laundry_bp.route("", methods=["GET"])
 @login_required
 def list_laundry_requests():
@@ -117,7 +106,6 @@ def list_laundry_requests():
 
     return jsonify([item.to_dict() for item in items]), 200
 
-
 @laundry_bp.route("/<int:request_id>", methods=["GET"])
 @login_required
 def get_laundry_request(request_id):
@@ -127,7 +115,6 @@ def get_laundry_request(request_id):
         return failure
 
     return jsonify(item.to_dict()), 200
-
 
 @laundry_bp.route("/<int:request_id>", methods=["PATCH"])
 @login_required
@@ -142,7 +129,6 @@ def update_laundry_request(request_id):
     if not isinstance(data, dict) or not data:
         return error("A non-empty JSON object is required", 400)
 
-    # Students may cancel their own pending requests only.
     if set(data) != {"status"} or data["status"] != "cancelled":
         return error("Only cancellation of a pending request is allowed", 403)
 

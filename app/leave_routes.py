@@ -1,4 +1,3 @@
-
 from datetime import date
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
@@ -8,7 +7,6 @@ from app import db
 from app.models import LeaveApplication
 
 leave_bp = Blueprint("leave", __name__, url_prefix="/leave")
-
 
 @leave_bp.route("/", methods=["GET", "POST"])
 @login_required
@@ -63,7 +61,6 @@ def apply_leave():
         "apply_leave.html",
         applications=applications,
     )
-
 
 @leave_bp.route("/<int:application_id>/cancel", methods=["POST"])
 @login_required

@@ -24,7 +24,6 @@ lost_found_bp = Blueprint(
     url_prefix="/lost-found",
 )
 
-
 def valid_image_content(photo, extension):
     photo.seek(0)
     header = photo.read(8)
@@ -36,12 +35,10 @@ def valid_image_content(photo, extension):
         return header == bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
     return False
 
-
 def photo_folder():
     folder = Path(current_app.config["UPLOAD_FOLDER"]) / "lost_found"
     folder.mkdir(parents=True, exist_ok=True)
     return folder
-
 
 @lost_found_bp.route("/", methods=["GET"])
 @login_required
@@ -80,7 +77,6 @@ def list_items():
         item_type=item_type,
         status=status,
     )
-
 
 @lost_found_bp.route("/report", methods=["POST"])
 @login_required
@@ -164,7 +160,6 @@ def report_item():
     flash("Item reported successfully.", "success")
     return redirect(url_for("lost_found.list_items"))
 
-
 @lost_found_bp.route("/<int:item_id>/claim", methods=["POST"])
 @login_required
 def claim_item(item_id):
@@ -201,7 +196,6 @@ def claim_item(item_id):
         flash("Could not claim the item. Please try again.", "error")
 
     return redirect(url_for("lost_found.list_items"))
-
 
 @lost_found_bp.route("/<int:item_id>/return", methods=["POST"])
 @login_required

@@ -1,4 +1,3 @@
-
 from datetime import date
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -23,7 +22,6 @@ WEEKDAYS = [
 ]
 
 MEAL_TYPES = ["Breakfast", "Lunch", "Snacks", "Dinner"]
-
 
 @mess_bp.route("/", methods=["GET"])
 @login_required
@@ -86,7 +84,6 @@ def manage_mess():
         weekdays=WEEKDAYS,
     )
 
-
 @mess_bp.route("/register", methods=["POST"])
 @login_required
 def register_meal():
@@ -125,7 +122,6 @@ def register_meal():
         flash("You are already registered for this meal.", "info")
 
     return redirect(url_for("mess.manage_mess"))
-
 
 @mess_bp.route("/feedback", methods=["POST"])
 @login_required

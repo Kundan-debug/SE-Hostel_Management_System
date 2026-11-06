@@ -1,4 +1,3 @@
-
 from datetime import date, datetime
 
 from flask import (
@@ -13,23 +12,16 @@ from sqlalchemy.exc import IntegrityError
 from app import db
 from app.models import CommonFacility, FacilityBooking
 
-
 facility_bp = Blueprint(
     "facility",
     __name__,
     url_prefix="/facilities",
 )
 
-
-# Common Facility Booking page
-
 @facility_bp.route("/page", methods=["GET"])
 @login_required
 def facility_booking_page():
     return render_template("facility_booking.html")
-
-
-# List all facilities
 
 @facility_bp.route("/", methods=["GET"])
 @login_required
@@ -49,9 +41,6 @@ def list_facilities():
         }
         for facility in facilities
     ]), 200
-
-
-# View the logged-in student's booking history
 
 @facility_bp.route("/bookings", methods=["GET"])
 @login_required
@@ -80,9 +69,6 @@ def list_my_bookings():
         }
         for booking in bookings
     ]), 200
-
-
-# Create a facility booking
 
 @facility_bp.route("/bookings", methods=["POST"])
 @login_required
@@ -205,9 +191,6 @@ def create_booking():
             "status": booking.status,
         },
     }), 201
-
-
-# Cancel a booking belonging to the logged-in student
 
 @facility_bp.route(
     "/bookings/<int:booking_id>/cancel",

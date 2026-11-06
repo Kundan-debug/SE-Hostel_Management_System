@@ -42,7 +42,6 @@ login_manager.login_message = "Please log in to access this page."
 ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
-
 def create_app(test_config=None):
     app = Flask(__name__)
 
@@ -74,7 +73,6 @@ def create_app(test_config=None):
     upload_folder = Path(app.root_path) / "static" / "uploads"
     upload_folder.mkdir(parents=True, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = str(upload_folder)
-
 
     @app.after_request
     def add_security_headers(response):
@@ -379,7 +377,7 @@ def create_app(test_config=None):
         if next_page.startswith("/") and not next_page.startswith("//"):
             return redirect(next_page)
 
-        return redirect(url_for("room.room_details"))
+        return redirect(url_for("home"))
 
     @app.route("/logout", methods=["POST"])
     @login_required

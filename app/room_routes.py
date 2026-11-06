@@ -6,14 +6,12 @@ from app.models import Room
 
 room_bp = Blueprint("room", __name__, url_prefix="/room-details")
 
-
 def get_student_room(student):
     """Return the Room record matching the student's hostel and room."""
     return Room.query.filter_by(
         hostel_name=student.hostel_name,
         room_number=student.room_number,
     ).first()
-
 
 def room_state(room, student):
     """Classify a room from the point of view of one student (read-only view).
@@ -31,7 +29,6 @@ def room_state(room, student):
         return "full"
     return "vacant"
 
-
 @room_bp.route("/")
 @login_required
 def room_details():
@@ -42,7 +39,6 @@ def room_details():
         student=current_user,
         room=room,
     )
-
 
 @room_bp.route("/allocation")
 @login_required

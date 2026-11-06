@@ -1,4 +1,3 @@
-
 from decimal import Decimal
 from uuid import uuid4
 
@@ -13,7 +12,6 @@ from app import db
 from app.models import Fee, Payment
 
 fees_bp = Blueprint("fees", __name__)
-
 
 @fees_bp.get("/fees")
 @login_required
@@ -42,7 +40,6 @@ def manage_fees():
         total_due=total_due,
     )
 
-
 @fees_bp.post("/fees/<int:fee_id>/pay")
 @login_required
 def simulate_payment(fee_id):
@@ -60,7 +57,6 @@ def simulate_payment(fee_id):
         flash("This fee has already been paid.", "error")
         return redirect(url_for("fees.manage_fees"))
 
-    # DEMO ONLY: no real money is transferred.
     payment = Payment(
         fee_id=fee.id,
         student_id=current_user.id,
@@ -82,7 +78,6 @@ def simulate_payment(fee_id):
 
     flash("Demo payment recorded successfully. No real money was charged.", "success")
     return redirect(url_for("fees.receipt", payment_id=payment.id))
-
 
 @fees_bp.get("/payments/<int:payment_id>/receipt")
 @login_required

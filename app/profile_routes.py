@@ -1,4 +1,3 @@
-
 import re
 from pathlib import Path
 from uuid import uuid4
@@ -19,13 +18,11 @@ from werkzeug.utils import secure_filename
 from app import db
 from app.models import Student
 
-
 profile_bp = Blueprint("profile", __name__, url_prefix="/profile")
 
 ALLOWED_PHOTO_EXTENSIONS = {"jpg", "jpeg", "png"}
 MAX_PHOTO_SIZE = 2 * 1024 * 1024
 NAME_PATTERN = r"[A-Za-z]+(?:[ '-][A-Za-z]+)*"
-
 
 def get_profile_photo():
     """Return the current student's stored profile photo filename."""
@@ -40,7 +37,6 @@ def get_profile_photo():
 
     return None
 
-
 def render_profile(form_data=None, errors=None, status=200):
     return (
         render_template(
@@ -53,12 +49,10 @@ def render_profile(form_data=None, errors=None, status=200):
         status,
     )
 
-
 @profile_bp.route("/", methods=["GET"])
 @login_required
 def view_profile():
     return render_profile()
-
 
 @profile_bp.route("/edit", methods=["POST"])
 @login_required
@@ -129,7 +123,6 @@ def edit_profile():
     flash("Your profile has been updated.", "success")
     return redirect(url_for("profile.view_profile"))
 
-
 @profile_bp.route("/photo", methods=["POST"])
 @login_required
 def upload_profile_photo():
@@ -173,7 +166,6 @@ def upload_profile_photo():
         flash("Photo upload failed. Please try again.", "error")
         return redirect(url_for("profile.view_profile"))
 
-    # Remove only this student's previous profile photos.
     for old_path in upload_folder.glob(
         f"profile_{current_user.id}_*"
     ):

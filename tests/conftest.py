@@ -7,9 +7,8 @@ from werkzeug.security import generate_password_hash
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from app import create_app, db  # noqa: E402
-from app.models import Student  # noqa: E402
-
+from app import create_app, db
+from app.models import Student
 
 def make_student(email, srn, hostel="Test Hostel", room="101"):
     return Student(
@@ -25,9 +24,6 @@ def make_student(email, srn, hostel="Test Hostel", room="101"):
         id_proof_filename="test-proof.pdf",
     )
 
-
-# Shared fixtures for the newer test modules. tests/test_app.py defines its
-# own fixtures with the same names, which take precedence inside that module.
 @pytest.fixture
 def app(tmp_path):
     app = create_app({
@@ -36,8 +32,6 @@ def app(tmp_path):
         "SECRET_KEY": "test-secret-key",
         "SQLALCHEMY_DATABASE_URI": "sqlite://",
     })
-    # create_app() sets UPLOAD_FOLDER itself, so override it afterwards to
-    # keep test uploads out of app/static/uploads.
     app.config["UPLOAD_FOLDER"] = str(tmp_path)
 
     with app.app_context():
@@ -50,11 +44,9 @@ def app(tmp_path):
         db.session.remove()
         db.drop_all()
 
-
 @pytest.fixture
 def client(app):
     return app.test_client()
-
 
 def log_in(client, email="student@gmail.com"):
     return client.post(

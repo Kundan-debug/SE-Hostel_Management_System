@@ -3,7 +3,6 @@ import pytest
 from app import db
 from app.models import Room, Student
 
-
 @pytest.fixture
 def rooms(app):
     """Student starts in Test Hostel / 101 (record exists, 1 of 2 beds used)."""
@@ -24,27 +23,17 @@ def rooms(app):
     db.session.commit()
     return {room.room_number: room.id for room in data}
 
-
 def get_room(room_id):
     return db.session.get(Room, room_id)
 
-
 def get_student():
     return Student.query.filter_by(email="student@gmail.com").one()
-
-
-# Access control
-
 
 def test_allocation_page_requires_login(client):
     response = client.get("/room-details/allocation")
 
     assert response.status_code == 302
     assert "/login" in response.headers["Location"]
-
-
-# Viewing rooms
-
 
 def test_allocation_page_lists_rooms_and_states(logged_in_client, rooms):
     response = logged_in_client.get("/room-details/allocation")
@@ -55,7 +44,6 @@ def test_allocation_page_lists_rooms_and_states(logged_in_client, rooms):
     assert b"Vacant" in response.data
     assert b"Full" in response.data
     assert b"Under maintenance" in response.data
-
 
 def test_allocation_page_filters_by_hostel(logged_in_client, rooms):
     response = logged_in_client.get(
@@ -80,10 +68,6 @@ def test_room_details_links_to_allocation(logged_in_client, rooms):
     assert response.status_code == 200
     assert b"/room-details/allocation" in response.data
 
-
-# Students cannot change their own room
-
-
 def test_page_offers_no_allocate_or_transfer_controls(
     logged_in_client, rooms
 ):
@@ -93,7 +77,6 @@ def test_page_offers_no_allocate_or_transfer_controls(
     assert b"Transfer here" not in response.data
     assert b"Allocate" not in response.data
 
-
 @pytest.mark.parametrize("method", ["post", "get", "put"])
 def test_allocate_endpoint_no_longer_exists(logged_in_client, rooms, method):
     response = getattr(logged_in_client, method)(
@@ -101,7 +84,6 @@ def test_allocate_endpoint_no_longer_exists(logged_in_client, rooms, method):
     )
 
     assert response.status_code in (404, 405)
-
 
 def test_student_room_and_occupancy_unchanged_after_attempt(
     logged_in_client, rooms
@@ -116,7 +98,6 @@ def test_student_room_and_occupancy_unchanged_after_attempt(
     )
     assert get_room(rooms["101"]).occupied_beds == 1
     assert get_room(rooms["102"]).occupied_beds == 1
-
 
 @pytest.mark.parametrize("field", ["room_number", "hostel_name"])
 def test_profile_update_cannot_change_room(logged_in_client, rooms, field):
