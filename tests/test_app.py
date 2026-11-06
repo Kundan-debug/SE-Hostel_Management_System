@@ -77,11 +77,11 @@ def test_home_endpoint(logged_in_client):
 
     assert response.status_code == 200
     assert b"Hostel Management System" in response.data
-    assert b"Student Profile" in response.data
-    assert b"Room Details" in response.data
-    assert b"Fees and Payments" in response.data
-    assert b"Leave Applications" in response.data
-    assert b"Common Facilities" in response.data
+    assert b"Student profile" in response.data
+    assert b"Room details" in response.data
+    assert b"Fees and payments" in response.data
+    assert b"Leave applications" in response.data
+    assert b"Common facilities" in response.data
 
 def test_security_headers(logged_in_client):
     response = logged_in_client.get("/")
@@ -94,7 +94,7 @@ def test_login_page_loads(client):
     response = client.get("/login")
 
     assert response.status_code == 200
-    assert b"Student Login" in response.data
+    assert b"Log in" in response.data
 
 def test_login_with_correct_credentials(client):
     response = client.post(
@@ -106,7 +106,7 @@ def test_login_with_correct_credentials(client):
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/room-details/")
+    assert response.headers["Location"].endswith("/")
 
 def test_login_with_incorrect_password(client):
     response = client.post(
@@ -222,7 +222,7 @@ def test_simulated_payment_creates_history_and_receipt(client, app):
     response = client.get(f"/payments/{payment_id}/receipt")
 
     assert response.status_code == 200
-    assert b"DEMO RECEIPT" in response.data
+    assert b"Demo receipt" in response.data
 
 def test_student_cannot_pay_another_students_fee(client, app):
     with app.app_context():
@@ -961,7 +961,7 @@ def test_student_can_view_announcements(logged_in_client, app):
     response = logged_in_client.get("/announcements/")
 
     assert response.status_code == 200
-    assert b"Notifications & Announcements" in response.data
+    assert b"Announcements" in response.data
     assert b"Water Supply Maintenance" in response.data
     assert b"Water supply will be interrupted tomorrow." in response.data
     assert b"Maintenance" in response.data
@@ -1027,12 +1027,12 @@ def test_manage_mess_requires_login(client):
 def test_manage_mess_page_loads(logged_in_client):
     response = logged_in_client.get("/mess/")
     assert response.status_code == 200
-    assert b"Weekly Menu" in response.data
-    assert b"Mess Attendance" in response.data
-    assert b"Feedback" in response.data
-    assert b"Mess Holidays" in response.data
-    assert b"Mess Fee Information" in response.data
-    assert b"currently unavailable" in response.data
+    assert b"Weekly menu and meal schedule" in response.data
+    assert b"Attendance" in response.data
+    assert b"Feedback and complaints" in response.data
+    assert b"Mess holidays" in response.data
+    assert b"Mess fees" in response.data
+    assert b"not available yet" in response.data
 
 def test_student_can_view_weekly_menu(logged_in_client, app):
     with app.app_context():
@@ -1231,7 +1231,7 @@ def test_lost_found_requires_login(client):
 def test_student_can_view_lost_found(logged_in_client):
     response = logged_in_client.get("/lost-found/")
     assert response.status_code == 200
-    assert b"Lost and Found" in response.data
+    assert b"Lost and found" in response.data
 
 def test_student_can_report_found_item(logged_in_client, app):
     response = logged_in_client.post(

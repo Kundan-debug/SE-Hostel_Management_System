@@ -39,7 +39,7 @@ def test_allocation_page_lists_rooms_and_states(logged_in_client, rooms):
     response = logged_in_client.get("/room-details/allocation")
 
     assert response.status_code == 200
-    assert b"Room Availability" in response.data
+    assert b"Room availability" in response.data
     assert b"Your room" in response.data
     assert b"Vacant" in response.data
     assert b"Full" in response.data

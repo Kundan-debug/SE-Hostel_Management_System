@@ -50,7 +50,7 @@ def test_complaints_page_loads(logged_in_client):
     response = logged_in_client.get("/complaints/")
 
     assert response.status_code == 200
-    assert b"Submit a Complaint" in response.data
+    assert b"Submit a complaint" in response.data
     assert b"You have not submitted any complaints yet." in response.data
 
 def test_submit_complaint_success(logged_in_client):

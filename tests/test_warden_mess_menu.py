@@ -27,7 +27,7 @@ def test_warden_can_view_mess_menu(client, warden):
     _login_warden(client, warden)
     response = client.get("/warden/mess-menu/")
     assert response.status_code == 200
-    assert b"Manage Mess Menu" in response.data
+    assert b"Manage mess menu" in response.data
 
 def test_student_cannot_access_mess_menu(logged_in_client):
     response = logged_in_client.get("/warden/mess-menu/")

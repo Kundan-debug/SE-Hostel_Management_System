@@ -32,7 +32,7 @@ def test_warden_session_persists_across_requests(client, warden):
     )
     response = client.get("/warden/")
     assert response.status_code == 200
-    assert b"Warden Dashboard" in response.data
+    assert b"Warden dashboard" in response.data
 
 def test_student_cannot_access_warden_dashboard(logged_in_client):
     assert logged_in_client.get("/warden/").status_code == 403
