@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Common Facilities | Hostel Management</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f7f5ef;
+            --paper: #ffffff;
+            --ink: #1f1d2b;
+            --text: #3d3a50;
+            --muted: #77738a;
+            --rule: #e6e2d6;
+            --blue: #cbd5ff;
+            --yellow: #ffe8a0;
+            --mint: #c6f0d6;
+            --peach: #ffcfc0;
+            --lilac: #e1d6ff;
+            --border: 2px solid var(--ink);
+            --shadow: 4px 4px 0 var(--ink);
+            --shadow-sm: 2px 2px 0 var(--ink);
+            --font-display: "Archivo", Arial, sans-serif;
+            --font-body: "DM Sans", sans-serif;
+            --font-mono: "JetBrains Mono", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        a {
+            color: var(--ink);
+            text-decoration: none;
+        }
+
+        .navbar {
+            background: var(--paper);
+            border-bottom: var(--border);
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .role-tag {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: var(--lilac);
+            border: 1.5px solid var(--ink);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .dashboard-link {
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 38px 24px 70px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 22px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .page-heading {
+            margin: 0;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 900;
+            line-height: 1.15;
+        }
+
+        .page-description {
+            margin-top: 10px;
+            margin-bottom: 30px;
+            color: var(--muted);
+        }
+
+        .section-heading {
+            margin: 0 0 18px;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 21px;
+            font-weight: 800;
+        }
+
+        .flash-message {
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            border: var(--border);
+            background: var(--mint);
+            font-weight: 600;
+        }
+
+        .flash-message.error {
+            background: var(--peach);
+        }
+
+        .panel {
+            margin-bottom: 35px;
+            padding: 25px;
+            border: var(--border);
+            background: var(--paper);
+            box-shadow: var(--shadow);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px 24px;
+        }
+
+        .form-group {
+            min-width: 0;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: var(--border);
+            border-radius: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--font-body);
+            font-size: 14px;
+        }
+
+        textarea {
+            min-height: 95px;
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: 3px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        button {
+            padding: 10px 17px;
+            border: var(--border);
+            border-radius: 30px;
+            background: var(--blue);
+            box-shadow: var(--shadow-sm);
+            color: var(--ink);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--ink);
+        }
+
+        .secondary-button {
+            background: var(--paper);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 35px;
+            border: var(--border);
+            background: var(--paper);
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            min-width: 850px;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--yellow);
+        }
+
+        th {
+            padding: 14px 15px;
+            border-bottom: var(--border);
+            color: var(--ink);
+            text-align: left;
+            white-space: nowrap;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--rule);
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #faf9f5;
+        }
+
+        .status-label {
+            display: inline-block;
+            padding: 4px 9px;
+            border: 1.5px solid var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .available,
+        .confirmed {
+            background: var(--mint);
+        }
+
+        .unavailable,
+        .cancelled {
+            background: var(--peach);
+        }
+
+        .pending {
+            background: var(--yellow);
+        }
+
+        .action-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select {
+            min-width: 115px;
+            padding: 8px 10px;
+            border: var(--border);
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--font-body);
+            font-size: 13px;
+        }
+
+        .empty-state {
+            margin-bottom: 35px;
+            padding: 35px 20px;
+            border: 2px dashed var(--ink);
+            background: var(--paper);
+            color: var(--muted);
+            text-align: center;
+        }
+
+        @media (max-width: 650px) {
+            .container {
+                padding: 25px 16px 50px;
+            }
+
+            .navbar-content {
+                padding: 12px 16px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: auto;
+            }
+
+            .panel {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="navbar-content">
+            <div class="brand">
+                Hostel
+                <span class="role-tag">WARDEN</span>
+            </div>
+
+            <a class="dashboard-link" href="{{ url_for('warden.dashboard') }}">
+                Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <a class="back-link" href="{{ url_for('warden.dashboard') }}">
+            ← Back to Dashboard
+        </a>
+
+        <h1 class="page-heading">Common Facilities</h1>
+
+        <p class="page-description">
+            Add facilities, manage availability and review student bookings.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="panel">
+
+            <h2 class="section-heading">Add New Facility</h2>
+
+            <form method="POST" action="{{ url_for('warden.manage_facilities') }}">
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="name">Facility Name *</label>
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            maxlength="100"
+                            placeholder="Enter facility name"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location *</label>
+                        <input
+                            type="text"
+                            id="location"
+                            name="location"
+                            maxlength="150"
+                            placeholder="Enter facility location"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="capacity">Capacity *</label>
+                        <input
+                            type="number"
+                            id="capacity"
+                            name="capacity"
+                            min="1"
+                            placeholder="Enter maximum capacity"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="description">Description</label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            maxlength="500"
+                            placeholder="Enter facility description"
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <button type="submit">Add Facility</button>
+                    </div>
+
+                </div>
+            </form>
+
+        </section>
+
+        <h2 class="section-heading">Existing Facilities</h2>
+
+        {% if facilities %}
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Facility Name</th>
+                            <th>Description</th>
+                            <th>Location</th>
+                            <th>Capacity</th>
+                            <th>Availability</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for facility in facilities %}
+                            <tr>
+                                <td>{{ facility.id }}</td>
+
+                                <td>
+                                    <strong>{{ facility.name }}</strong>
+                                </td>
+
+                                <td>{{ facility.description or '-' }}</td>
+
+                                <td>{{ facility.location }}</td>
+
+                                <td>{{ facility.capacity }}</td>
+
+                                <td>
+                                    {% if facility.is_available %}
+                                        <span class="status-label available">
+                                            Available
+                                        </span>
+                                    {% else %}
+                                        <span class="status-label unavailable">
+                                            Unavailable
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <form
+                                        class="action-form"
+                                        method="POST"
+                                        action="{{ url_for('warden.update_facility_availability', facility_id=facility.id) }}"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="csrf_token"
+                                            value="{{ csrf_token() }}"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="is_available"
+                                            value="{{ 'false' if facility.is_available else 'true' }}"
+                                        >
+
+                                        {% if facility.is_available %}
+                                            <button type="submit" class="secondary-button">
+                                                Disable
+                                            </button>
+                                        {% else %}
+                                            <button type="submit">
+                                                Enable
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+                No common facilities have been added yet.
+            </div>
+
+        {% endif %}
+
+        <h2 class="section-heading">Student Facility Bookings</h2>
+
+        {% if bookings %}
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Student</th>
+                            <th>Facility</th>
+                            <th>Booking Date</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Status</th>
+                            <th>Update Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for booking in bookings %}
+                            <tr>
+                                <td>{{ booking.id }}</td>
+
+                                <td>
+                                    {{ booking.student.full_name if booking.student else booking.student_id }}
+                                </td>
+
+                                <td>
+                                    {{ booking.facility.name if booking.facility else '-' }}
+                                </td>
+
+                                <td>{{ booking.booking_date }}</td>
+
+                                <td>{{ booking.start_time }}</td>
+
+                                <td>{{ booking.end_time }}</td>
+
+                                <td>
+                                    <span class="status-label {{ booking.status|lower }}">
+                                        {{ booking.status }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <form
+                                        class="action-form"
+                                        method="POST"
+                                        action="{{ url_for('warden.update_facility_booking', booking_id=booking.id) }}"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="csrf_token"
+                                            value="{{ csrf_token() }}"
+                                        >
+
+                                        <select name="status" required>
+                                            <option
+                                                value="Pending"
+                                                {% if booking.status == 'Pending' %}selected{% endif %}
+                                            >
+                                                Pending
+                                            </option>
+
+                                            <option
+                                                value="Confirmed"
+                                                {% if booking.status == 'Confirmed' %}selected{% endif %}
+                                            >
+                                                Confirmed
+                                            </option>
+
+                                            <option
+                                                value="Cancelled"
+                                                {% if booking.status == 'Cancelled' %}selected{% endif %}
+                                            >
+                                                Cancelled
+                                            </option>
+                                        </select>
+
+                                        <button type="submit">Update</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+                No student facility bookings have been made yet.
+            </div>
+
+        {% endif %}
+
+    </main>
+
+</body>
+</html>

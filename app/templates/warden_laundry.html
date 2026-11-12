@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Laundry | Hostel Management</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f7f5ef;
+            --paper: #ffffff;
+            --ink: #1f1d2b;
+            --text: #3d3a50;
+            --muted: #77738a;
+            --rule: #e6e2d6;
+
+            --blue: #cbd5ff;
+            --blue-strong: #8ea0ff;
+            --yellow: #ffe8a0;
+            --mint: #c6f0d6;
+            --peach: #ffcfc0;
+
+            --border: 2px solid var(--ink);
+            --shadow: 4px 4px 0 var(--ink);
+            --shadow-sm: 2px 2px 0 var(--ink);
+
+            --font-display: "Archivo", "Arial Black", Arial, sans-serif;
+            --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: "JetBrains Mono", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.12;
+        }
+
+        h1 {
+            font-size: clamp(28px, 4.2vw, 42px);
+        }
+
+        h2 {
+            font-size: 21px;
+        }
+
+        a {
+            color: var(--ink);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: var(--paper);
+            border-bottom: var(--border);
+        }
+
+        .topbar-in {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 19px;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-mark {
+            display: inline-grid;
+            place-items: center;
+            width: 30px;
+            height: 30px;
+            background: var(--yellow);
+            border: var(--border);
+            box-shadow: var(--shadow-sm);
+            font-size: 15px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1.5px solid var(--ink);
+            background: #e1d6ff;
+            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .toplink {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .top-actions form {
+            margin: 0;
+        }
+
+        .page {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 36px 24px 72px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 18px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .page-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        .lede {
+            margin-top: 10px;
+            max-width: 60ch;
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        button, .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--blue-strong);
+            color: var(--ink);
+            border: var(--border);
+            border-radius: 999px;
+            box-shadow: var(--shadow-sm);
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--ink);
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+
+        button.secondary {
+            background: var(--paper);
+        }
+
+        button.sm {
+            padding: 6px 14px;
+            font-size: 11.5px;
+        }
+
+        button.mint {
+            background: var(--mint);
+        }
+
+        button.danger {
+            background: var(--peach);
+        }
+
+        .flash {
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border: var(--border);
+            background: var(--blue);
+            color: var(--ink);
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .flash.success {
+            background: var(--mint);
+        }
+
+        .flash.error,
+        .flash.danger {
+            background: var(--peach);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            background: var(--paper);
+            border: var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th, td {
+            padding: 13px 16px;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        th {
+            background: var(--yellow);
+            border-bottom: var(--border);
+            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        tbody tr:hover td {
+            background: #fcfbf7;
+        }
+
+        td form {
+            margin: 0;
+        }
+
+        td select {
+            width: auto;
+            min-width: 120px;
+            padding: 7px 10px;
+            background: var(--paper);
+            color: var(--ink);
+            border: var(--border);
+            border-radius: 0;
+            font: inherit;
+            font-size: 14px;
+        }
+
+        td .row-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1.5px solid var(--ink);
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .status.pending {
+            background: var(--yellow);
+        }
+
+        .status.processing {
+            background: var(--blue);
+        }
+
+        .status.ready,
+        .status.delivered {
+            background: var(--mint);
+        }
+
+        .status.cancelled {
+            background: var(--peach);
+        }
+
+        .num {
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .empty {
+            padding: 28px 16px;
+            text-align: center;
+            color: var(--muted);
+            border: 2px dashed var(--ink);
+            background: var(--bg);
+        }
+
+        @media (max-width: 600px) {
+            .topbar-in {
+                padding: 10px 16px;
+            }
+
+            .page {
+                padding: 24px 16px 56px;
+            }
+
+            .toplink {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div class="topbar-in">
+            <a class="brand" href="{{ url_for('warden.dashboard') }}">
+                <span class="brand-mark">H</span>
+                Hostel
+                <span class="tag">Warden</span>
+            </a>
+
+            <nav class="top-actions" aria-label="Main">
+                <a class="toplink" href="{{ url_for('warden.dashboard') }}">Dashboard</a>
+
+                <form action="{{ url_for('logout') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="secondary sm">Log out</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page">
+
+        <a class="back" href="{{ url_for('warden.dashboard') }}">
+            &larr; Dashboard
+        </a>
+
+        <div class="page-head">
+            <div>
+                <h1>Manage Laundry</h1>
+                <p class="lede">
+                    View student laundry requests and update their processing status.
+                </p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        {% if laundry_requests %}
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Student ID</th>
+                            <th>Items</th>
+                            <th>Quantity</th>
+                            <th>Pickup Date</th>
+                            <th>Delivery Date</th>
+                            <th>Status</th>
+                            <th>Update Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in laundry_requests %}
+                            <tr>
+                                <td class="num">{{ item.id }}</td>
+
+                                <td class="num">{{ item.student_id }}</td>
+
+                                <td>{{ item.item_details }}</td>
+
+                                <td class="num">{{ item.quantity }}</td>
+
+                                <td class="num">
+                                    {{ item.pickup_date.strftime('%d-%m-%Y') if item.pickup_date else '-' }}
+                                </td>
+
+                                <td class="num">
+                                    {{ item.delivery_date.strftime('%d-%m-%Y') if item.delivery_date else '-' }}
+                                </td>
+
+                                <td>
+                                    <span class="status {{ item.status|lower }}">
+                                        {{ item.status }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <form method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="request_id" value="{{ item.id }}">
+
+                                        <div class="row-actions">
+                                            <select name="status" aria-label="Update laundry request status">
+                                                <option value="pending" {% if item.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                <option value="processing" {% if item.status == 'processing' %}selected{% endif %}>Processing</option>
+                                                <option value="ready" {% if item.status == 'ready' %}selected{% endif %}>Ready</option>
+                                                <option value="delivered" {% if item.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                                <option value="cancelled" {% if item.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                            </select>
+
+                                            <button type="submit" class="sm">Update</button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+
+            <p class="empty">No laundry requests found.</p>
+
+        {% endif %}
+
+    </main>
+
+</body>
+</html>

@@ -83,7 +83,6 @@ img { max-width: 100%; display: block; }
 .small { font-size: 13px; }
 .inline { display: inline; margin: 0; }
 
-/* ---------- highlight motif ---------- */
 .hl {
   display: inline-block;
   padding: 0 0.22em;
@@ -94,7 +93,6 @@ img { max-width: 100%; display: block; }
   -webkit-box-decoration-break: clone;
 }
 
-/* ---------- top bar ---------- */
 .topbar {
   position: sticky;
   top: 0;
@@ -142,7 +140,6 @@ img { max-width: 100%; display: block; }
 }
 .toplink:hover { text-decoration: underline; text-decoration-thickness: 2px; }
 
-/* ---------- page shell ---------- */
 .page {
   max-width: 1120px;
   margin: 0 auto;
@@ -176,7 +173,6 @@ img { max-width: 100%; display: block; }
 }
 .head-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-/* ---------- small chrome: tags ---------- */
 .tag, .badge, .status {
   display: inline-block;
   padding: 2px 8px;
@@ -197,7 +193,6 @@ img { max-width: 100%; display: block; }
 .tag.peach  { background: var(--peach); }
 .tag.lilac  { background: var(--lilac); }
 
-/* status colours — one rule set for every status word in the app */
 :is(.badge, .status).pending, :is(.badge, .status).open, :is(.badge, .status).medium,
 :is(.badge, .status).due, :is(.badge, .status).status-Claimed { background: var(--yellow); }
 
@@ -214,7 +209,6 @@ img { max-width: 100%; display: block; }
 :is(.badge, .status).unavailable, :is(.badge, .status).maintenance,
 :is(.badge, .status).under-maintenance, :is(.badge, .status).lost { background: var(--peach); }
 
-/* ---------- cards & panels ---------- */
 .card, .panel {
   background: var(--paper);
   border: var(--border);
@@ -244,7 +238,6 @@ img { max-width: 100%; display: block; }
 }
 .grid-2 > .panel { margin-bottom: 0; }
 
-/* ---------- messages ---------- */
 .flash, .notice, .message.success, .message.error, .form-message {
   padding: 12px 16px;
   margin-bottom: 20px;
@@ -260,11 +253,9 @@ img { max-width: 100%; display: block; }
 
 .notice.warn, .notice:not(.error):not(.success) { background: var(--yellow); }
 
-/* JS-driven message box (facility, laundry) */
 .message { display: none; }
 .message.success, .message.error { display: block; }
 
-/* server-rendered register messages */
 .form-message { display: none; }
 .form-message.visible, .form-message.success { display: block; }
 
@@ -277,7 +268,6 @@ img { max-width: 100%; display: block; }
 }
 td.empty { border: 0; background: transparent; }
 
-/* ---------- forms ---------- */
 label {
   display: block;
   margin: 0 0 6px;
@@ -384,7 +374,6 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ink); }
   gap: 12px;
 }
 
-/* ---------- buttons ---------- */
 button, .btn {
   display: inline-flex;
   align-items: center;
@@ -439,7 +428,6 @@ button.block, .btn.block { width: 100%; padding: 13px 20px; }
   text-underline-offset: 4px;
 }
 
-/* ---------- tables ---------- */
 .table-wrap {
   overflow-x: auto;
   background: var(--paper);
@@ -476,7 +464,6 @@ td .sub { display: block; color: var(--muted); font-size: 13px; }
 td.description { max-width: 320px; }
 .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* ---------- stats ---------- */
 .stat-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -508,7 +495,6 @@ td.description { max-width: 320px; }
 .stat.peach { background: var(--peach); }
 .stat.lilac { background: var(--lilac); }
 
-/* ---------- detail grid (key / value) ---------- */
 .details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -531,7 +517,6 @@ td.description { max-width: 320px; }
 }
 .detail-value { color: var(--ink); font-size: 16px; font-weight: 600; word-break: break-word; }
 
-/* ---------- list entries (mess, etc.) ---------- */
 .entry {
   padding: 12px 0;
   border-bottom: 1px solid var(--rule);
@@ -541,7 +526,6 @@ td.description { max-width: 320px; }
 .entry strong { color: var(--ink); }
 .entry-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-/* ---------- dashboard tiles ---------- */
 .hero {
   position: relative;
   padding: 34px 32px;
@@ -625,12 +609,10 @@ td.description { max-width: 320px; }
 .icon-box.lilac { background: var(--lilac); }
 .icon-box.sky { background: var(--sky); }
 
-/* warden nav tiles */
 .tile.compact { flex-direction: row; align-items: center; gap: 14px; padding: 16px 18px; }
 .tile.compact h3 { margin: 0; font-size: 16px; }
 .tile.compact p { font-size: 13px; }
 
-/* ---------- facility / lost & found / mess cards ---------- */
 .facility-grid, .items, .meal-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -669,7 +651,6 @@ td.description { max-width: 320px; }
 
 .meal-time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
 
-/* ---------- profile ---------- */
 .profile-top { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
 .avatar {
   width: 112px;
@@ -691,14 +672,12 @@ td.description { max-width: 320px; }
 .profile-top .info h2 { font-size: 26px; }
 .profile-top .upload { margin-top: 16px; }
 
-/* ---------- room availability ---------- */
 .current-room {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
 }
 
-/* ---------- auth ---------- */
 .auth {
   min-height: 100vh;
   display: grid;
@@ -752,7 +731,6 @@ td.description { max-width: 320px; }
 .auth.wide { grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); }
 .auth.wide .auth-main { align-items: flex-start; padding-top: 56px; padding-bottom: 56px; }
 
-/* ---------- receipt ---------- */
 .receipt-wrap { max-width: 560px; margin: 48px auto; padding: 0 20px; }
 .receipt {
   background: var(--paper);
@@ -786,7 +764,6 @@ td.description { max-width: 320px; }
 .receipt-row.total .value { font-family: var(--font-display); font-size: 24px; font-weight: 800; }
 .receipt-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; align-items: center; }
 
-/* ---------- announcements ---------- */
 .announcement {
   padding: 24px;
   margin-bottom: 22px;
@@ -809,7 +786,6 @@ td.description { max-width: 320px; }
 .menu-entry h3 { margin-bottom: 14px; }
 .fields-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
 
-/* ---------- responsive ---------- */
 @media (max-width: 900px) {
   .auth, .auth.wide { grid-template-columns: 1fr; }
   .auth-aside { border-right: 0; border-bottom: var(--border); padding: 28px 24px; gap: 24px; }
@@ -845,7 +821,6 @@ td.description { max-width: 320px; }
   .receipt-wrap { margin: 0 auto; }
 }
 
-/* spacing helpers added after review */
 .panel > h2 + .table-wrap, .card > h2 + .table-wrap,
 .panel > h2 + .empty, .card > h2 + .empty { margin-top: 18px; }
 .panel > h2 + .day-label, .panel > h2 + h4.day-label { margin-top: 18px; }
@@ -968,14 +943,25 @@ td.description { max-width: 320px; }
         }
 
         async function apiRequest(url, options = {}) {
+            const csrfToken = document.querySelector(
+                'input[name="csrf_token"]'
+            )?.value;
+
+            const headers = {
+                ...(options.body ? {
+                    "Content-Type": "application/json"
+                } : {}),
+                ...(options.headers || {})
+            };
+
+            if (csrfToken && options.method &&
+              options.method.toUpperCase() !== "GET") {
+                headers["X-CSRFToken"] = csrfToken;
+          }
+
             const response = await fetch(url, {
                 ...options,
-                headers: {
-                    ...(options.body ? {
-                        "Content-Type": "application/json"
-                    } : {}),
-                    ...(options.headers || {})
-                }
+                headers
             });
 
             const data = await response.json().catch(() => ({}));

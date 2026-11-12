@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost and Found | Hostel Management</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f7f5ef;
+            --paper: #ffffff;
+            --ink: #1f1d2b;
+            --text: #3d3a50;
+            --muted: #77738a;
+            --rule: #e6e2d6;
+            --blue: #cbd5ff;
+            --blue-strong: #8ea0ff;
+            --yellow: #ffe8a0;
+            --mint: #c6f0d6;
+            --peach: #ffcfc0;
+            --lilac: #e1d6ff;
+            --border: 2px solid var(--ink);
+            --shadow: 4px 4px 0 var(--ink);
+            --shadow-sm: 2px 2px 0 var(--ink);
+            --font-display: "Archivo", Arial, sans-serif;
+            --font-body: "DM Sans", sans-serif;
+            --font-mono: "JetBrains Mono", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        a {
+            color: var(--ink);
+            text-decoration: none;
+        }
+
+        .navbar {
+            background: var(--paper);
+            border-bottom: var(--border);
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .role-tag {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            background: var(--lilac);
+            border: 1.5px solid var(--ink);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .dashboard-link {
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 38px 24px 70px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 22px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .page-heading {
+            margin: 0;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 900;
+            line-height: 1.15;
+        }
+
+        .page-description {
+            margin-top: 10px;
+            margin-bottom: 30px;
+            color: var(--muted);
+        }
+
+        .section-heading {
+            margin: 0 0 18px;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 21px;
+            font-weight: 800;
+        }
+
+        .flash-message {
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            border: var(--border);
+            background: var(--mint);
+            font-weight: 600;
+        }
+
+        .flash-message.error {
+            background: var(--peach);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: var(--paper);
+            border: var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            min-width: 950px;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--yellow);
+        }
+
+        th {
+            padding: 14px 15px;
+            border-bottom: var(--border);
+            color: var(--ink);
+            text-align: left;
+            white-space: nowrap;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--rule);
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #faf9f5;
+        }
+
+        .item-title {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .type-label {
+            display: inline-block;
+            padding: 4px 9px;
+            border: 1.5px solid var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .type-label.lost {
+            background: var(--peach);
+        }
+
+        .type-label.found {
+            background: var(--mint);
+        }
+
+        .status-label {
+            display: inline-block;
+            padding: 4px 9px;
+            border: 1.5px solid var(--ink);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-open {
+            background: var(--yellow);
+        }
+
+        .status-claimed {
+            background: var(--lilac);
+        }
+
+        .status-returned {
+            background: var(--mint);
+        }
+
+        .update-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select {
+            min-width: 115px;
+            padding: 8px 10px;
+            border: var(--border);
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--font-body);
+            font-size: 13px;
+        }
+
+        button {
+            padding: 9px 14px;
+            border: var(--border);
+            border-radius: 30px;
+            background: var(--blue);
+            box-shadow: var(--shadow-sm);
+            color: var(--ink);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--ink);
+        }
+
+        .empty-state {
+            padding: 35px 20px;
+            border: 2px dashed var(--ink);
+            background: var(--paper);
+            color: var(--muted);
+            text-align: center;
+        }
+
+        @media (max-width: 650px) {
+            .container {
+                padding: 25px 16px 50px;
+            }
+
+            .navbar-content {
+                padding: 12px 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="navbar-content">
+            <div class="brand">
+                Hostel
+                <span class="role-tag">WARDEN</span>
+            </div>
+
+            <a class="dashboard-link" href="{{ url_for('warden.dashboard') }}">
+                Dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <a class="back-link" href="{{ url_for('warden.dashboard') }}">
+            ← Back to Dashboard
+        </a>
+
+        <h1 class="page-heading">Lost and Found</h1>
+
+        <p class="page-description">
+            View reported lost and found items and update their status.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <h2 class="section-heading">Reported Items</h2>
+
+        {% if items %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>Item</th>
+                            <th>Reported By</th>
+                            <th>Claimant</th>
+                            <th>Location</th>
+                            <th>Item Date</th>
+                            <th>Photo</th>
+                            <th>Status</th>
+                            <th>Update</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in items %}
+                            <tr>
+                                <td>{{ item.id }}</td>
+
+                                <td>
+                                    <span class="type-label {{ item.item_type|lower }}">
+                                        {{ item.item_type }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="item-title">
+                                        {{ item.title }}
+                                    </span>
+                                    <br>
+                                    <small>{{ item.description or '-' }}</small>
+                                </td>
+
+                                <td>
+                                    {{ item.reporter.full_name if item.reporter else item.student_id }}
+                                </td>
+
+                                <td>
+                                    {{ item.claimant.full_name if item.claimant else '-' }}
+                                </td>
+
+                                <td>{{ item.location or '-' }}</td>
+
+                                <td>{{ item.item_date or '-' }}</td>
+
+                                <td>
+                                    {% if item.photo_filename %}
+                                        <span>Attached</span>
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="status-label status-{{ item.status|lower }}">
+                                        {{ item.status }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <form
+                                        class="update-form"
+                                        method="POST"
+                                        action="{{ url_for('warden.manage_lost_found') }}"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="csrf_token"
+                                            value="{{ csrf_token() }}"
+                                        >
+
+                                        <input
+                                            type="hidden"
+                                            name="item_id"
+                                            value="{{ item.id }}"
+                                        >
+
+                                        <select name="status" required>
+                                            <option value="Open" {% if item.status == 'Open' %}selected{% endif %}>
+                                                Open
+                                            </option>
+
+                                            <option value="Claimed" {% if item.status == 'Claimed' %}selected{% endif %}>
+                                                Claimed
+                                            </option>
+
+                                            <option value="Returned" {% if item.status == 'Returned' %}selected{% endif %}>
+                                                Returned
+                                            </option>
+                                        </select>
+
+                                        <button type="submit">Update</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% else %}
+            <div class="empty-state">
+                No lost or found items have been reported yet.
+            </div>
+        {% endif %}
+
+    </main>
+
+</body>
+</html>
